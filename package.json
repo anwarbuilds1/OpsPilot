@@ -1,0 +1,20 @@
+{
+  "name": "opspilot",
+  "version": "0.1.0-spec",
+  "private": true,
+  "description": "Open-source, deployment-aware AI operations platform",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "echo \"[ci] Workspace linting ready for Phase 1\"",
+    "typecheck": "echo \"[ci] Workspace typecheck ready for Phase 1\"",
+    "test": "echo \"[ci] Workspace test suite ready for Phase 1\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}

@@ -46,7 +46,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Dependencies
         run: |
@@ -66,10 +65,12 @@ jobs:
 
       - name: Run Type Check
         run: |
-          if [ -f tsconfig.json ]; then
+          if [ -f package.json ] && grep -q '"typecheck"' package.json; then
+            npm run typecheck
+          elif [ -f tsconfig.json ] && [ -n "$(find . -name '*.ts' -not -path '*/node_modules/*' -print -quit)" ]; then
             npx tsc --noEmit
           else
-            echo "Skipping typecheck: tsconfig.json not yet initialized."
+            echo "Skipping typecheck: no TypeScript source files to compile yet."
           fi
 
   unit-tests:
