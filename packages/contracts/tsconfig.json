@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -16,5 +17,8 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
+  "references": [
+    { "path": "../domain" }
+  ],
   "include": ["src/**/*"]
 }

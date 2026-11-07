@@ -9,17 +9,25 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run --workspaces --if-present build",
-    "typecheck": "npm run --workspaces --if-present typecheck",
-    "lint": "echo '[ci] All workspace packages typechecked and lint-compliant'",
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint packages/*/src/**/*.ts",
     "test": "vitest run",
     "test:unit": "vitest run packages/domain packages/contracts packages/security packages/deployment-providers",
     "test:db": "vitest run packages/database",
     "test:security": "vitest run packages/deployment-providers/tests/hardened-build-runner.spec.ts packages/security/tests/secret-redactor.spec.ts"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@babel/eslint-parser": "^7.29.13",
+    "@babel/preset-typescript": "^7.29.7",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^8.57.1",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.32.0",
     "pg": "^8.23.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.12",
