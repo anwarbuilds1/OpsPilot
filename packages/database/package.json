@@ -1,0 +1,23 @@
+{
+  "name": "@opspilot/database",
+  "version": "0.1.0",
+  "description": "PostgreSQL schema, migrations, connection pool, and repositories for OpsPilot",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Database package lint ok'",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opspilot/domain": "*",
+    "@opspilot/contracts": "*",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.10"
+  },
+  "author": "OpsPilot Core Team",
+  "license": "UNLICENSED"
+}

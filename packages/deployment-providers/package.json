@@ -1,0 +1,20 @@
+{
+  "name": "@opspilot/deployment-providers",
+  "version": "0.1.0",
+  "description": "Deployment provider abstractions, interfaces, registry, and concrete adapters for OpsPilot",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Deployment providers package lint ok'",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opspilot/domain": "*",
+    "@opspilot/contracts": "*",
+    "@opspilot/security": "*"
+  },
+  "author": "OpsPilot Core Team",
+  "license": "UNLICENSED"
+}

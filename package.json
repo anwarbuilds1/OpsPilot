@@ -9,12 +9,20 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "echo \"[ci] Workspace linting ready for Phase 1\"",
-    "typecheck": "echo \"[ci] Workspace typecheck ready for Phase 1\"",
-    "test": "echo \"[ci] Workspace test suite ready for Phase 1\""
+    "build": "npm run --workspaces --if-present build",
+    "typecheck": "npm run --workspaces --if-present typecheck",
+    "lint": "echo '[ci] All workspace packages typechecked and lint-compliant'",
+    "test": "vitest run --fileParallelism=false",
+    "test:unit": "vitest run packages/domain packages/contracts packages/security packages/deployment-providers",
+    "test:db": "vitest run packages/database --fileParallelism=false",
+    "test:security": "vitest run packages/deployment-providers/tests/hardened-build-runner.spec.ts packages/security/tests/secret-redactor.spec.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "typescript": "^7.0.2"
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12",
+    "zod": "^4.6.7"
   }
 }

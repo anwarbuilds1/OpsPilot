@@ -50,81 +50,50 @@ stateDiagram-v2
 
 ## 2. Common Deployment Provider Contract
 
-All infrastructure adapters must implement the `DeploymentProvider` interface defined in `packages/deployment-providers`:
+All infrastructure adapters must implement the `IDeploymentProvider` interface defined in `packages/deployment-providers`:
 
 ```typescript
-export interface DeploymentConfig {
-  organizationId: string;
-  projectId: string;
-  serviceId: string;
-  deploymentId: string;
-  environment: string;
-  commitSha: string;
-  imageUri: string;
-  containerPort: number;
-  healthCheckEndpoint: string;
-  environmentVariables: Record<string, string>;
-  resourceLimits: {
-    cpuUnits: number;    // e.g. 512 for 0.5 vCPU
-    memoryMb: number;    // e.g. 1024 for 1024 MB
-  };
-}
+export interface IDeploymentProvider {
+  readonly providerType: TargetProvider;
+  readonly capabilities: DeploymentCapabilities;
 
-export interface ConnectionResult {
-  connected: boolean;
-  providerVersion?: string;
-  error?: string;
-  latencyMs: number;
-}
+  /** Validates authentication credentials and connectivity to remote infrastructure */
+  validateConnection(
+    credentials: Readonly<Record<string, unknown>>,
+    targetConfig?: Readonly<Record<string, unknown>>
+  ): Promise<ConnectionResult>;
 
-export interface PreparedDeployment {
-  deploymentId: string;
-  targetArtifactId: string; // ECS TaskDef ARN or VPS Compose path
-  providerMetadata: Record<string, unknown>;
-}
-
-export interface DeploymentResult {
-  success: boolean;
-  status: "Deploying" | "Succeeded" | "Failed";
-  message?: string;
-  providerDeploymentId?: string; // e.g. ECS Deployment ID
-}
-
-export interface DeploymentStatus {
-  status: "Deploying" | "HealthChecking" | "Succeeded" | "Failed";
-  runningCount: number;
-  desiredCount: number;
-  events: Array<{ timestamp: Date; message: string }>;
-}
-
-export interface RollbackResult {
-  success: boolean;
-  restoredArtifactId: string;
-  message: string;
-}
-
-export interface DeploymentProvider {
-  readonly providerType: "aws_ecs" | "vps_docker";
-
-  /** Validates connectivity and permissions to target infrastructure */
-  validateConnection(targetId: string): Promise<ConnectionResult>;
-
-  /** Prepares target infrastructure manifests or task definitions */
+  /** Validates and prepares target manifests or task definitions */
   prepareDeployment(config: DeploymentConfig): Promise<PreparedDeployment>;
 
-  /** Triggers the deployment on the target infrastructure */
-  deploy(deployment: PreparedDeployment): Promise<DeploymentResult>;
+  /** Dispatches deployment artifact/manifest to the target infrastructure */
+  deploy(
+    deployment: PreparedDeployment,
+    credentials: Readonly<Record<string, unknown>>
+  ): Promise<DeploymentResult>;
 
-  /** Queries real-time progress and event streams */
-  getStatus(deploymentId: string): Promise<DeploymentStatus>;
+  /** Queries real-time progress and event streams from the target provider */
+  getStatus(
+    deploymentId: string,
+    externalId: string,
+    credentials: Readonly<Record<string, unknown>>
+  ): Promise<DeploymentStatusResult>;
 
-  /** Executes an immediate rollback to the preceding deployment artifact */
-  rollback(deploymentId: string, previousArtifactId: string): Promise<RollbackResult>;
+  /** Executes an immediate rollback to the preceding immutable artifact version */
+  rollback(
+    deploymentId: string,
+    targetVersionIdentifier: string,
+    credentials: Readonly<Record<string, unknown>>
+  ): Promise<RollbackResult>;
 
-  /** Polls the service health check endpoint until stabilized or timed out */
-  checkHealth(deploymentId: string): Promise<boolean>;
+  /** Probes the deployed service health endpoint until verified or timed out */
+  checkHealth(targetUrl: string): Promise<HealthCheckResult>;
 }
 ```
+
+### 2.1 Polymorphic Deployment Configuration & Capabilities
+
+Deployment configurations are discriminated polymorphically by `targetProvider` (`aws_ecs | vps_docker | cloudflare_workers | cloudflare_pages`), separating **build strategy**, **artifact format**, and **application runtime** into independent domain attributes rather than coupling to a single runtime string. Providers declare explicit `DeploymentCapabilities` defining container support, port requirements, and rollback modes.
 
 ---
 

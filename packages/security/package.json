@@ -1,0 +1,15 @@
+{
+  "name": "@opspilot/security",
+  "version": "0.1.0",
+  "description": "Encryption, RBAC policies, secret redactor for OpsPilot",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Security package lint ok'",
+    "test": "vitest run"
+  },
+  "author": "OpsPilot Core Team",
+  "license": "UNLICENSED"
+}

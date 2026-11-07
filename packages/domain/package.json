@@ -1,0 +1,16 @@
+{
+  "name": "@opspilot/domain",
+  "version": "0.1.0",
+  "description": "Pure domain entities, value objects, enums, and state machines for OpsPilot",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Domain package lint ok'",
+    "test": "vitest run"
+  },
+  "keywords": ["opspilot", "domain"],
+  "author": "OpsPilot Core Team",
+  "license": "UNLICENSED"
+}

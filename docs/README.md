@@ -70,6 +70,11 @@ Formal records of critical architectural choices, alternatives considered, and t
 - [ADR-0011: Read-Only AI Investigation Agent](decisions/ADR-0011-read-only-ai-investigation-agent.md)
 - [ADR-0012: Human Approval Gate for Production Remediation](decisions/ADR-0012-human-approval-gate-for-production-remediation.md)
 - [ADR-0013: Open-Source License Selection](decisions/ADR-0013-open-source-license-selection.md)
+- [ADR-0014: Separate Cloudflare Workers and Cloudflare Pages Providers](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0014-separate-cloudflare-workers-and-cloudflare-pages-providers)
+- [ADR-0015: Direct Upload Strategy for Cloudflare Pages](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0015-direct-upload-strategy-for-cloudflare-pages)
+- [ADR-0016: Node.js Isolated Build Runner for Cloudflare Targets](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0016-nodejs-isolated-build-runner-for-cloudflare-targets)
+- [ADR-0017: Polymorphic Deployment Configuration and Database Schema Evolution](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0017-polymorphic-deployment-configuration-and-database-schema-evolution)
+- [ADR-0018: Cloudflare API Token Scoping and Envelope Encryption](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0018-cloudflare-api-token-scoping-and-envelope-encryption)
 
 ---
 
@@ -97,6 +102,12 @@ Runbooks and specifications for running and connecting OpsPilot.
 - [GitHub Integration](integrations/GITHUB_INTEGRATION.md) — App manifest, permissions, and webhook signature verification.
 - [AWS Integration](integrations/AWS_INTEGRATION.md) — IAM external ID assumption and CloudWatch telemetry integration.
 - [VPS Integration](integrations/VPS_INTEGRATION.md) — SSH connectivity validation and Docker socket security.
+- [Cloudflare Integration Audit](integrations/cloudflare/CLOUDFLARE_INTEGRATION_AUDIT.md) — Baseline audit of Cloudflare Workers and Pages feasibility.
+- [Cloudflare Architecture Proposal](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_PROPOSAL.md) — Modular monolith extension, provider hierarchy, and sequence workflows.
+- [Cloudflare Gap Analysis](integrations/cloudflare/CLOUDFLARE_GAP_ANALYSIS.md) — 15-point architecture gap analysis, container assumptions, and risk mitigations.
+- [Cloudflare Implementation Plan](integrations/cloudflare/CLOUDFLARE_IMPLEMENTATION_PLAN.md) — 10-phase dependency-aware engineering execution plan.
+- [Cloudflare Architecture Decisions](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md) — ADRs 0014–0018 governing Cloudflare integration choices.
+- [Cloudflare Architecture Review](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_REVIEW.md) — Formal adversarial review and verification report.
 
 ---
 
