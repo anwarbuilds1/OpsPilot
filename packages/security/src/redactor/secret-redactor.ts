@@ -4,6 +4,12 @@ export interface ISecretRedactor {
 }
 
 export class SecretRedactor implements ISecretRedactor {
+  private static readonly defaultInstance = new SecretRedactor();
+
+  static redactText(text: string): string {
+    return this.defaultInstance.redact(text);
+  }
+
   private readonly rules: { pattern: RegExp; replacement: string }[] = [
     {
       // Bearer tokens (Authorization headers, CF tokens, etc.)
