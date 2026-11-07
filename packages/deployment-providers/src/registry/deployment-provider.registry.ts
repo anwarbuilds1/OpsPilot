@@ -41,4 +41,14 @@ export class DeploymentProviderRegistry {
   clear(): void {
     this.providers.clear();
   }
+
+  static createDefault(customProviders?: IDeploymentProvider[]): DeploymentProviderRegistry {
+    const registry = new DeploymentProviderRegistry();
+    if (customProviders) {
+      for (const p of customProviders) {
+        registry.registerProvider(p);
+      }
+    }
+    return registry;
+  }
 }

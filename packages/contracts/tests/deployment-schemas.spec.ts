@@ -109,4 +109,73 @@ describe('Contracts & Schema Validation', () => {
     expect(parsed.supportsContainers).toBe(true);
     expect(parsed.targetProvider).toBe('aws_ecs');
   });
+
+  it('validates Cloudflare integration and wizard schemas', async () => {
+    const {
+      ConnectCloudflareAccountRequestSchema,
+      ConnectCloudflareAccountResponseSchema,
+      CloudflareWorkerServiceWizardSchema,
+      CloudflarePagesServiceWizardSchema,
+      CloudflareDeploymentStatusViewSchema,
+    } = await import('../src/index.js');
+
+    const connectReq = ConnectCloudflareAccountRequestSchema.parse({
+      organizationId: 'a0000000-0000-4000-8000-000000000001',
+      name: 'Acme Cloudflare',
+      apiToken: 'cf_tok_1234567890123456789012345678901234567890',
+    });
+    expect(connectReq.name).toBe('Acme Cloudflare');
+
+    const workerWizard = CloudflareWorkerServiceWizardSchema.parse({
+      name: 'Auth Worker',
+      slug: 'auth-worker',
+      repositoryName: 'acme/auth',
+      branch: 'main',
+      integrationId: 'b0000000-0000-4000-8000-000000000001',
+      scriptName: 'auth-worker',
+      compatibilityDate: '2026-11-01',
+    });
+    expect(workerWizard.mainEntrypoint).toBe('src/index.ts');
+
+    const pagesWizard = CloudflarePagesServiceWizardSchema.parse({
+      name: 'Docs Site',
+      slug: 'docs-site',
+      repositoryName: 'acme/docs',
+      integrationId: 'b0000000-0000-4000-8000-000000000001',
+      projectName: 'acme-docs',
+      buildCommand: 'npm run build',
+      outputDirectory: 'dist',
+    });
+    expect(pagesWizard.projectName).toBe('acme-docs');
+
+    const statusView = CloudflareDeploymentStatusViewSchema.parse({
+      deploymentId: 'c0000000-0000-4000-8000-000000000001',
+      serviceId: 'd0000000-0000-4000-8000-000000000001',
+      provider: 'cloudflare_workers',
+      status: 'Succeeded',
+      deployedUrl: 'https://auth-worker.workers.dev',
+      canInstantRollback: true,
+      previousVersions: [
+        {
+          versionId: 'v1',
+          versionNumber: 1,
+          deployedAt: new Date().toISOString(),
+        },
+      ],
+      events: [
+        {
+          timestamp: new Date().toISOString(),
+          stage: 'Succeeded',
+          message: 'Deployment complete',
+          level: 'INFO',
+        },
+      ],
+      healthStatus: {
+        isHealthy: true,
+        httpStatusCode: 200,
+        latencyMs: 32,
+      },
+    });
+    expect(statusView.canInstantRollback).toBe(true);
+  });
 });
