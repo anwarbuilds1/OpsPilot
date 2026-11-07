@@ -170,7 +170,7 @@ flowchart TD
 #### Finding 8: ENG-01 — Health Checks Executed Before Provider Stabilization
 - **Severity:** High (State Machine Flaw)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/engine/deployment-execution-engine.ts`](../packages/deployment-providers/src/engine/deployment-execution-engine.ts#L72-L96)
+- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../packages/application/src/orchestrator/deployment-execution-engine.ts#L72-L96)
 - **Evidence:**
   The engine transitions directly from `Deploying` to `HealthChecking` immediately after `provider.deploy()` returns. It never polls `provider.getStatus()` to confirm that ECS tasks are running or Cloudflare CDN edges have propagated the new version.
 - **Architectural Impact:** Health checks run against the previous deployment version or fail with 502 Bad Gateway due to edge propagation delay.
@@ -178,7 +178,7 @@ flowchart TD
 #### Finding 9: ENG-03 — No Deployment Reconciliation on Worker Crashes
 - **Severity:** High (Reliability Defect)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/engine/deployment-execution-engine.ts`](../packages/deployment-providers/src/engine/deployment-execution-engine.ts)
+- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../packages/application/src/orchestrator/deployment-execution-engine.ts)
 - **Evidence:**
   The engine runs entirely in memory without recording execution heartbeats, lease timeouts, or worker locks in PostgreSQL. If a background worker terminates during deployment, the deployment record remains stuck in `Deploying` indefinitely.
 - **Architectural Impact:** Blocked deployment pipelines requiring manual database intervention.
