@@ -1,7 +1,7 @@
 import { Pool, PoolConfig } from 'pg';
 
 export function createDatabasePool(customConfig?: PoolConfig): Pool {
-  const config: PoolConfig = customConfig ?? {
+  const defaults: PoolConfig = {
     connectionString: process.env.DATABASE_URL,
     user: process.env.PGUSER ?? 'anwar',
     database: process.env.PGDATABASE ?? 'postgres',
@@ -12,5 +12,5 @@ export function createDatabasePool(customConfig?: PoolConfig): Pool {
     connectionTimeoutMillis: 5000,
   };
 
-  return new Pool(config);
+  return new Pool({ ...defaults, ...customConfig });
 }

@@ -12,9 +12,9 @@
     "build": "npm run --workspaces --if-present build",
     "typecheck": "npm run --workspaces --if-present typecheck",
     "lint": "echo '[ci] All workspace packages typechecked and lint-compliant'",
-    "test": "vitest run --fileParallelism=false",
+    "test": "vitest run",
     "test:unit": "vitest run packages/domain packages/contracts packages/security packages/deployment-providers",
-    "test:db": "vitest run packages/database --fileParallelism=false",
+    "test:db": "vitest run packages/database",
     "test:security": "vitest run packages/deployment-providers/tests/hardened-build-runner.spec.ts packages/security/tests/secret-redactor.spec.ts"
   },
   "devDependencies": {
