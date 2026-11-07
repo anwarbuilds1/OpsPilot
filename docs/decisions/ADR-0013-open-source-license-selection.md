@@ -1,7 +1,7 @@
 # ADR-0013: Open-Source License Selection & Comparative Analysis
 
-- **Status:** Pending Project Owner Approval
-- **Date:** 2026-11-01
+- **Status:** Accepted
+- **Date:** 2026-11-01 (Ratified: 2026-11-08)
 - **Author:** Principal Software Architect & Open-Source Maintainer
 - **Deciders:** OpsPilot Project Owner / Founder
 
@@ -72,9 +72,9 @@ We evaluated three primary license archetypes: **MIT**, **Apache-2.0**, and **AG
 
 ---
 
-## Pending Decision & Current Repository Status
+## Ratified Decision
 
-Until the project owner formally approves this decision:
-- The root `LICENSE` file remains uncommitted or clearly marked as `Pending License Selection`.
-- The repository is marked as `Proposed Open-Source Specification` in documentation and badges.
-- No contributor claims of licensing terms are legally binding until this ADR is marked **Accepted**.
+The project owner formally approved and ratified **Apache License 2.0** as OpsPilot's official open-source license during Phase 0 authorization:
+- The canonical `LICENSE` file is committed at the repository root.
+- All workspace package manifests (`package.json`) reflect `"license": "Apache-2.0"`.
+- OpsPilot is officially licensed under Apache License, Version 2.0.

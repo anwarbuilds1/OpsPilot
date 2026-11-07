@@ -7,11 +7,13 @@ Thank you for using OpsPilot. We want to ensure you have the resources and suppo
 ## 1. Documentation First
 
 Before seeking community support, please consult the authoritative documentation:
-- **Architecture & Design:** [`docs/architecture/`](docs/architecture/)
-- **Setup & Local Dev:** [`docs/engineering/DEVELOPMENT_SETUP.md`](docs/engineering/DEVELOPMENT_SETUP.md)
-- **API Contracts:** [`docs/engineering/API_SPECIFICATION.md`](docs/engineering/API_SPECIFICATION.md)
+- **Comprehensive Docs Index:** [`docs/README.md`](docs/README.md)
+- **Architecture & Boundaries:** [`docs/architecture/`](docs/architecture/)
+- **Setup & Local Development:** [`docs/development/LOCAL_DEVELOPMENT.md`](docs/development/LOCAL_DEVELOPMENT.md)
+- **Environment Configuration:** [`docs/development/ENVIRONMENT_CONFIGURATION.md`](docs/development/ENVIRONMENT_CONFIGURATION.md)
+- **Engineering Standards:** [`docs/engineering/ENGINEERING_STANDARDS.md`](docs/engineering/ENGINEERING_STANDARDS.md)
+- **Implementation Roadmap:** [`docs/PROJECT_IMPLEMENTATION_ROADMAP.md`](docs/PROJECT_IMPLEMENTATION_ROADMAP.md)
 - **Troubleshooting Guide:** [`docs/operations/TROUBLESHOOTING.md`](docs/operations/TROUBLESHOOTING.md)
-- **Common Error Codes:** [`docs/reference/ERROR_CODES.md`](docs/reference/ERROR_CODES.md)
 
 ---
 

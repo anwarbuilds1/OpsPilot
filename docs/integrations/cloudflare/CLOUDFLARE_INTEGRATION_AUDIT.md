@@ -41,7 +41,7 @@ A systematic inspection of the repository was performed across all functional di
   - `docker/`: **Missing / Planned.** Defined as compose configs and runner Dockerfiles.
 
 ### 2.2 Existing Deployment Architecture (As Specified)
-- **File Reference:** [`docs/architecture/DEPLOYMENT_ARCHITECTURE.md`](../architecture/DEPLOYMENT_ARCHITECTURE.md#2-common-deployment-provider-contract)
+- **File Reference:** [`docs/architecture/DEPLOYMENT_ARCHITECTURE.md`](../../architecture/DEPLOYMENT_ARCHITECTURE.md#2-common-deployment-provider-contract)
 - **Deployment Provider Interface:**
   The `DeploymentProvider` interface specifies six methods:
   - `validateConnection(targetId: string): Promise<ConnectionResult>`
@@ -64,7 +64,7 @@ A systematic inspection of the repository was performed across all functional di
   - `Publishing` is explicitly defined as pushing an image to Amazon ECR or a private Docker registry.
 
 ### 2.3 Database Design & Relational Schema (As Specified)
-- **File Reference:** [`docs/engineering/DATABASE_DESIGN.md`](../engineering/DATABASE_DESIGN.md)
+- **File Reference:** [`docs/engineering/DATABASE_DESIGN.md`](../../engineering/DATABASE_DESIGN.md)
 - **`services` Table (Lines 119–137):**
   Contains mandatory columns hardcoded for Docker:
   - `dockerfile_path VARCHAR(255) NOT NULL DEFAULT 'Dockerfile'`
@@ -83,12 +83,12 @@ A systematic inspection of the repository was performed across all functional di
   - `image_uri TEXT` (Assumes an image URI is produced).
 
 ### 2.4 API Endpoints (As Specified)
-- **File Reference:** [`docs/engineering/API_SPECIFICATION.md`](../engineering/API_SPECIFICATION.md)
+- **File Reference:** [`docs/engineering/API_SPECIFICATION.md`](../../engineering/API_SPECIFICATION.md)
 - Service creation `POST /api/v1/projects/:projectId/services` accepts container parameters: `dockerfilePath`, `buildContext`, `containerPort`, `cpuUnits`, `memoryMb`.
 - Integrations support only `/integrations/github/connect`, `/integrations/aws/connect`, `/integrations/vps/connect`.
 
 ### 2.5 Security & Runner Sandboxing (As Specified)
-- **File Reference:** [`docs/security/DEPLOYMENT_RUNNER_SECURITY.md`](../security/DEPLOYMENT_RUNNER_SECURITY.md)
+- **File Reference:** [`docs/security/DEPLOYMENT_RUNNER_SECURITY.md`](../../security/DEPLOYMENT_RUNNER_SECURITY.md)
 - Builds are isolated in ephemeral runner containers.
 - Untrusted user repositories cannot access the host Docker daemon socket (`/var/run/docker.sock`).
 - Envelope encryption (AES-256-GCM / KMS) secures credentials in `integration_credentials`.

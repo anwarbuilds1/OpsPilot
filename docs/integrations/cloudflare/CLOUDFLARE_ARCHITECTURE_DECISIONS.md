@@ -21,8 +21,8 @@
 
 ## ADR-0014: Separate Cloudflare Workers and Cloudflare Pages Providers
 
-- **Status:** Amended via Architecture Review (November 2026)  *(Originally Accepted: 2026-11-07)*
-- **Date:** 2026-11-07 (Amended: 2026-11-07)
+- **Status:** Implemented & Verified (November 2026) *(Amended via Architecture Review)*
+- **Date:** 2026-11-07 (Amended: 2026-11-07, Implemented: 2026-11-08)
 - **Author:** Principal Software Architect
 - **Deciders:** OpsPilot Core Team & Architecture Review Board
 
@@ -72,8 +72,8 @@ Add `'cloudflare_workers'` and `'cloudflare_pages'` to the `target_provider` enu
 
 ## ADR-0015: Direct Upload Strategy for Cloudflare Pages
 
-- **Status:** Amended via Architecture Review (November 2026) *(Originally Accepted: 2026-11-07)*
-- **Date:** 2026-11-07 (Amended: 2026-11-07)
+- **Status:** Implemented & Verified (November 2026) *(Amended via Architecture Review)*
+- **Date:** 2026-11-07 (Amended: 2026-11-07, Implemented: 2026-11-08)
 - **Author:** DevOps Architect
 - **Deciders:** OpsPilot Core Team & Architecture Review Board
 
@@ -121,8 +121,8 @@ Implement manifest hashing and chunked parallel upload client in `CloudflarePage
 
 ## ADR-0016: Node.js Isolated Build Runner for Cloudflare Targets
 
-- **Status:** Amended via Architecture Review (November 2026) *(Originally Accepted: 2026-11-07)*
-- **Date:** 2026-11-07 (Amended: 2026-11-07)
+- **Status:** Implemented & Verified (November 2026) *(Amended via Architecture Review)*
+- **Date:** 2026-11-07 (Amended: 2026-11-07, Implemented: 2026-11-08)
 - **Author:** Senior Platform Security Specialist
 - **Deciders:** OpsPilot Core Team & Architecture Review Board
 
@@ -165,15 +165,15 @@ Customer code cannot alter host state, access host networks, or escape the conta
 - **Justification:** Eliminates critical vulnerabilities identified in `CLOUDFLARE_ARCHITECTURE_REVIEW.md` (Decisions 5 and 7) regarding metadata credential theft, host RAM DoS, and runner token exposure.
 
 ### References
-- [`docs/security/DEPLOYMENT_RUNNER_SECURITY.md`](../security/DEPLOYMENT_RUNNER_SECURITY.md)
+- [`docs/security/DEPLOYMENT_RUNNER_SECURITY.md`](../../security/DEPLOYMENT_RUNNER_SECURITY.md)
 - [`CLOUDFLARE_ARCHITECTURE_REVIEW.md`](./CLOUDFLARE_ARCHITECTURE_REVIEW.md)
 
 ---
 
 ## ADR-0017: Polymorphic Deployment Configuration and Database Schema Evolution
 
-- **Status:** Amended via Architecture Review (November 2026) *(Originally Accepted: 2026-11-07)*
-- **Date:** 2026-11-07 (Amended: 2026-11-07)
+- **Status:** Implemented & Verified (November 2026) *(Amended via Architecture Review)*
+- **Date:** 2026-11-07 (Amended: 2026-11-07, Implemented: 2026-11-08)
 - **Author:** Principal Software Architect
 - **Deciders:** OpsPilot Core Team & Architecture Review Board
 
@@ -224,15 +224,15 @@ Tenant isolation is strictly maintained as `organization_id` remains the immutab
 - **Justification:** Resolves issues identified in `CLOUDFLARE_ARCHITECTURE_REVIEW.md` (Decisions 2 and 9). Prevents invalid container configurations from being persisted and eliminates the technically inaccurate concept of "static_pages" as an application runtime.
 
 ### References
-- [`docs/engineering/DATABASE_DESIGN.md`](../engineering/DATABASE_DESIGN.md)
+- [`docs/engineering/DATABASE_DESIGN.md`](../../engineering/DATABASE_DESIGN.md)
 - [`CLOUDFLARE_ARCHITECTURE_REVIEW.md`](./CLOUDFLARE_ARCHITECTURE_REVIEW.md)
 
 ---
 
 ## ADR-0018: Cloudflare API Token Scoping and Envelope Encryption
 
-- **Status:** Amended via Architecture Review (November 2026) *(Originally Accepted: 2026-11-07)*
-- **Date:** 2026-11-07 (Amended: 2026-11-07)
+- **Status:** Implemented & Verified (November 2026) *(Amended via Architecture Review)*
+- **Date:** 2026-11-07 (Amended: 2026-11-07, Implemented: 2026-11-08)
 - **Author:** Senior Platform Security Specialist
 - **Deciders:** OpsPilot Core Team & Architecture Review Board
 
@@ -281,5 +281,5 @@ Even in the event of an SQL injection or database dump, credentials remain crypt
 
 ### References
 - [Cloudflare API Token Documentation](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
-- [`docs/security/CREDENTIAL_MANAGEMENT.md`](../security/CREDENTIAL_MANAGEMENT.md)
+- [`docs/security/CREDENTIAL_MANAGEMENT.md`](../../security/CREDENTIAL_MANAGEMENT.md)
 - [`CLOUDFLARE_ARCHITECTURE_REVIEW.md`](./CLOUDFLARE_ARCHITECTURE_REVIEW.md)

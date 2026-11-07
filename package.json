@@ -3,7 +3,7 @@
   "version": "0.1.0-spec",
   "private": true,
   "description": "Open-source, deployment-aware AI operations platform",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "workspaces": [
     "apps/*",
     "packages/*"

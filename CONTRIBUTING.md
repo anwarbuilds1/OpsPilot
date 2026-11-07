@@ -15,9 +15,11 @@ All contributors and maintainers are expected to adhere to our [Code of Conduct]
 ## 2. Getting Started
 
 ### 2.1 Prerequisites
-- **Node.js**: `v20.x` LTS or later
-- **npm**: `v10.x` or later
-- **Docker & Docker Compose**: For local PostgreSQL and Redis backing services
+- **Node.js**: `v20.x` LTS (`v20.20.2` verified)
+- **NPM**: `v10.x` or later (`10.8.2` verified)
+- **PostgreSQL**: Version 16+ (PostgreSQL 18.6 verified)
+- **Redis**: Version 7.x+
+- **Docker**: For sandboxed build runners
 - **Git**
 
 ### 2.2 Local Setup
@@ -26,83 +28,71 @@ All contributors and maintainers are expected to adhere to our [Code of Conduct]
    git clone https://github.com/<your-username>/OpsPilot.git
    cd OpsPilot
    ```
-2. Create your feature branch:
-   ```bash
-   git checkout -b feat/your-feature-name
-   ```
-3. Start local development infrastructure:
-   ```bash
-   docker compose -f docker/docker-compose.dev.yml up -d
-   ```
-4. Copy environment configuration and install dependencies:
+2. Copy environment configuration and install dependencies:
    ```bash
    cp .env.example .env
    npm install
    ```
+3. Generate a 256-bit hex master key and configure `OPSPILOT_MASTER_KEY` in `.env`:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+4. Initialize the PostgreSQL database and run migrations:
+   ```bash
+   npm run db:migrate
+   ```
 
-For detailed setup instructions, troubleshooting, and architectural context, see the [Development Setup Guide](docs/engineering/DEVELOPMENT_SETUP.md).
+For comprehensive instructions, see the authoritative [Local Development Guide](docs/development/LOCAL_DEVELOPMENT.md) and [Environment Configuration Catalog](docs/development/ENVIRONMENT_CONFIGURATION.md).
 
 ---
 
 ## 3. Branch & Commit Conventions
 
+OpsPilot strictly enforces **Conventional Commits v1.0.0**. Detailed specifications can be found in [Git & Commit Conventions](docs/engineering/GIT_AND_COMMIT_CONVENTIONS.md).
+
 ### 3.1 Branch Naming
 Use descriptive branch names with appropriate prefixes:
 - `feat/<feature-name>`: New user-facing or platform features.
-- `fix/<bug-name>`: Bug fixes and patches.
+- `fix/<issue-name>`: Bug fixes and security patches.
 - `docs/<topic>`: Documentation enhancements or ADR updates.
 - `refactor/<scope>`: Code refactoring without behavioral changes.
 - `test/<scope>`: Adding or modifying test suites.
 - `chore/<task>`: Dependency updates, CI workflows, build tooling.
 
-### 3.2 Commit Messages (Conventional Commits)
-We enforce the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+### 3.2 Commit Messages
 ```text
-<type>(<scope>): <short description>
+<type>(<scope>): <short description in imperative present tense>
 
 [optional body explaining context and rationale]
 
-[optional footer(s) such as Closes #123]
+[optional footer(s) such as Closes #123, Fixes SEC-01]
 ```
 
-**Allowed types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.  
-**Examples:**
-- `feat(deployments): add rollback support for VPS Docker Compose`
-- `fix(incident-engine): prevent race condition during alert deduplication`
-- `docs(adr): document ADR-0013 open-source license evaluation`
+**Allowed types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.  
+**Allowed scopes:** `api`, `dashboard`, `worker`, `domain`, `contracts`, `application`, `database`, `security`, `deployment-providers`, `deployment-engine`, `observability`, `job-queue`, `ai`, `config`, `docker`, `ci`, `release`.
 
 ---
 
-## 4. Coding & Architecture Standards
+## 4. Engineering & Architectural Standards
 
-1. **Strict TypeScript:** All code must pass `tsc --noEmit` under strict mode. Never use `any`.
-2. **Modular Monolith Discipline:** Respect module boundaries in `apps/api/src/modules/`. Modules must not directly import or mutate internal entities of other modules; interact solely through public service interfaces or domain events. See [Module Boundaries](docs/architecture/MODULE_BOUNDARIES.md).
-3. **Tenant Isolation:** Every database query, cache key, and event payload must include an `organization_id`. Test tenant isolation explicitly.
-4. **Security by Design:** Never log secrets, passwords, or credentials. All infrastructure tools called by AI agents must be read-only and enforce bounds on output length and duration.
+All contributions must adhere to our authoritative engineering standards:
+1. **[Engineering Standards](docs/engineering/ENGINEERING_STANDARDS.md)**: Rules for code quality, API contracts, database operations, security engineering, and reliability.
+2. **[Coding Conventions](docs/engineering/CODING_CONVENTIONS.md)**: Strict TypeScript (`"strict": true`, no `any`), custom domain error hierarchy, and async cleanup patterns.
+3. **[Architectural Project Boundaries](docs/architecture/PROJECT_BOUNDARIES.md)**: Inward dependency flow towards pure `@opspilot/domain` (0 external dependencies).
+4. **[Testing Standards](docs/engineering/TESTING_STANDARDS.md)**: Risk-weighted testing pyramid, deterministic mocking rules, and multi-tenant isolation tests.
+5. **[Control Plane vs. Execution Plane](docs/architecture/CONTROL_PLANE_AND_EXECUTION_PLANE.md)**: Strict credential firewall; zero secrets inside untrusted build runner containers.
 
 ---
 
 ## 5. Pull Request (PR) Workflow
 
-1. **Keep PRs Focused:** Submit small, targeted PRs rather than sprawling multi-feature submissions.
-2. **Include Tests:** Every new feature must be accompanied by unit and/or integration tests.
-3. **Run Pre-flight Checks:**
+1. **Keep PRs Atomic:** Submit focused PRs matching atomic boundaries defined in the [Phased Implementation Roadmap](docs/PROJECT_IMPLEMENTATION_ROADMAP.md).
+2. **Include Tests:** All domain logic, state machines, and cryptographic flows require accompanying unit/integration tests.
+3. **Run Pre-flight Checks Locally:**
    ```bash
-   npm run lint
-   npm run typecheck
-   npm run test
+   npm run verify
    ```
-4. **Update Documentation:** Update corresponding markdown files in `docs/` and add Architecture Decision Records (`docs/decisions/`) for structural design changes.
-5. **PR Description:** Use the provided [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md) to describe:
-   - What changed and why.
-   - Related issues closed (e.g., `Closes #42`).
-   - Testing steps performed.
-   - Security considerations.
-
----
-
-## 6. Review & Release Process
-
-- Every PR requires review and approval from at least one core maintainer.
-- Continuous Integration (CI) checks (linting, type checking, unit tests, secret scanning) must pass before merging.
-- PRs are merged using **Squash and Merge** to maintain a clean linear git history.
+   (Runs linting, typechecking, and unit tests).
+4. **Complete the PR Template:** Fill out [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
+5. **Review & Ownership:** PRs are reviewed by designated code owners specified in [`.github/CODEOWNERS`](.github/CODEOWNERS).
+6. **Merge Strategy:** Squash and merge is enforced on `main` to maintain linear history.

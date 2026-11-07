@@ -81,6 +81,24 @@ flowchart TD
 - Independent, active synthetic probing executed by the `Telemetry Worker` at 30-second intervals.
 - Measures DNS lookup latency, TLS handshake latency, time-to-first-byte (TTFB), and HTTP response status code.
 
+### 2.4 Cloudflare Edge Telemetry Integration (Workers & Pages)
+Implemented in `CloudflareTelemetryService` adhering to the 4-tier model (ADR-0018 amendment):
+1. **Edge Synthetic Health Probing:**
+   - Active probe inspects edge diagnostic response headers (`CF-Ray`, `CF-Worker`, `CF-Cache-Status`).
+   - Automatically detects Cloudflare edge error codes:
+     - **Error 1101:** Worker threw an unhandled JavaScript exception.
+     - **Error 1027:** Worker CPU execution time exceeded limit.
+     - **Error 1015:** Rate limited at Cloudflare edge.
+2. **Bounded Live Tail Diagnostic Session:**
+   - Ephemeral WebSocket stream created during the deployment verification window (max 30 minutes) to capture immediate startup crashes.
+   - Strictly prohibited from being treated as a durable historical log database.
+3. **Cloudflare GraphQL Analytics Engine:**
+   - Queries `workersInvocationsAdaptive` for requests, errors, subrequests, and P50/P99 CPU execution times.
+   - Computes real-time error rates and flags incidents when error rate $> 5\%$ or P99 CPU $> 45\text{ms}$.
+4. **OpenTelemetry Normalization:**
+   - Normalizes Cloudflare probe results, analytics metrics, and tail events into OpsPilot OpenTelemetry schema (`cloud.provider: "cloudflare"`, `cloudflare.ray_id`, `http.status_code`).
+
+
 ---
 
 ## 3. Secret Scrubbing & Data Sanitization

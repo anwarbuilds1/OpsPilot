@@ -6,6 +6,20 @@ This documentation serves as the single source of truth for software architects,
 
 ---
 
+## ⭐️ Project Foundation, Governance & Blueprint (November 2026)
+
+These authoritative documents establish the baseline audit, monorepo structure, architectural decisions, and phased implementation roadmap for the platform:
+
+- [**Project Architecture Final Review**](PROJECT_ARCHITECTURE_FINAL_REVIEW.md) — Authoritative final review report establishing architecture corrections, runner security, cryptographic standards, and approval readiness.
+- [**Project Foundation Blueprint Reconciliation Report**](PROJECT_FOUNDATION_RECONCILIATION.md) — Master reconciliation of repository evidence, final package ownership, technology matrix, and open questions.
+- [**Project Foundation Audit Report**](PROJECT_FOUNDATION_AUDIT.md) — Comprehensive repository state audit and formal classification of the 10 adversarial audit findings (`SEC-01` through `UI-01`).
+- [**Project Foundation Architectural Decisions**](PROJECT_FOUNDATION_DECISIONS.md) — Canonical decisions on monorepo topology, engine decoupling, NIST SP 800-57 envelope encryption, and Apache-2.0 licensing.
+- [**Project Foundation Remediation Plan**](PROJECT_FOUNDATION_REMEDIATION_PLAN.md) — Dependency-ordered sequencing of the 10 pre-implementation blockers into governance tiers.
+- [**Canonical Repository Structure**](REPOSITORY_STRUCTURE.md) — Detailed package responsibility matrix, inclusions/exclusions, dependency rules, and interface ownership.
+- [**Phased Implementation Roadmap**](PROJECT_IMPLEMENTATION_ROADMAP.md) — Granular 8-phase execution roadmap (Phases 0–7) with scope, atomic commits, acceptance, and exit criteria.
+
+---
+
 ## Documentation Structure
 
 ```text
@@ -13,15 +27,15 @@ docs/
 ├── product/          # Product Requirements, Personas, User Flows, MVP Scope
 ├── architecture/     # System Blueprints, Module Boundaries, Data Flows, Lifecycles
 ├── decisions/        # Architecture Decision Records (ADRs)
-├── engineering/      # Schemas, REST APIs, Job Contracts, Implementation Plan
-├── deployment/       # AWS ECS, VPS Docker, Local Dev, CI/CD, Rollback
-├── integrations/     # GitHub, AWS, VPS, CloudWatch, OpenTelemetry
-├── ai/               # AI Gateway, Tool Specs, Incident Simulation & Evaluation
+├── engineering/      # Standards, Coding Conventions, CI/CD, Git Rules, Schemas
 ├── security/         # Threat Model (STRIDE), Envelope Encryption, Runner Security
-├── testing/          # Testing Pyramid, Multi-Tenant Tests, E2E Verification
-├── operations/       # Monitoring, Incident Response, Troubleshooting Runbooks
-├── open-source/      # Contributor Workflows, Release Policies, Governance
-└── reference/        # Configuration, Environment Variables, Error Codes
+├── development/      # Contributor Setup, Local PostgreSQL/Redis, Environment Config
+├── testing/          # Testing Strategy, Harness Architecture, Coverage Standards
+├── releases/         # Release Engineering, SemVer, Signing, Provenance
+├── deployment/       # AWS ECS, VPS Docker, Local Dev, CI/CD, Rollback
+├── integrations/     # GitHub, AWS, VPS, Cloudflare, OpenTelemetry
+├── ai/               # AI Gateway, Tool Specs, Incident Simulation & Evaluation
+└── operations/       # Monitoring, Incident Response, Troubleshooting Runbooks
 ```
 
 ---
@@ -41,6 +55,8 @@ Learn about why OpsPilot exists, the problems it solves, who uses it, and the pr
 ## 2. System Architecture (`docs/architecture/`)
 Deep dive into the modular monolith design, container topology, module boundaries, and lifecycles.
 - [System Architecture Blueprint](architecture/SYSTEM_ARCHITECTURE.md) — C4 context diagram, container topology, execution boundaries, and trade-offs.
+- [Architectural Project Boundaries](architecture/PROJECT_BOUNDARIES.md) — Hexagonal boundaries, domain purity, invariants, and enforcement mechanisms.
+- [Control Plane vs. Execution Plane](architecture/CONTROL_PLANE_AND_EXECUTION_PLANE.md) — Trust levels, credential firewall, sandboxed runners, and crash recovery.
 - [Module Boundaries & Domain Interfaces](architecture/MODULE_BOUNDARIES.md) — Explicit rules for NestJS modules, entity ownership, and cyclic dependency prevention.
 - [Data Flow Specifications](architecture/DATA_FLOW.md) — Sequence workflows for Webhooks, Builds, Deployments, Telemetry, and AI Investigations.
 - [Deployment Architecture](architecture/DEPLOYMENT_ARCHITECTURE.md) — Unified deployment provider abstraction, AWS ECS/Fargate adapter, and VPS Docker Compose adapter.
@@ -78,52 +94,64 @@ Formal records of critical architectural choices, alternatives considered, and t
 
 ---
 
-## 4. Engineering & Specifications (`docs/engineering/`)
-Concrete implementation guidelines, database schemas, API specs, and execution sequences.
-- [Database Design & Schema](engineering/DATABASE_DESIGN.md) — Comprehensive PostgreSQL schema, table definitions, indexes, foreign keys, and Mermaid ER diagram.
-- [REST API Specification](engineering/API_SPECIFICATION.md) — Full API reference with request/response schemas, auth rules, and examples.
+## 4. Engineering Standards & Governance (`docs/engineering/`)
+Concrete engineering standards, coding conventions, testing pyramids, and CI/CD pipelines.
+- [Engineering Standards](engineering/ENGINEERING_STANDARDS.md) — Code quality, API engineering, database rules, security and reliability standards.
+- [Coding Conventions & TypeScript Guide](engineering/CODING_CONVENTIONS.md) — Strict TypeScript rules, naming conventions, error hierarchy, and import hygiene.
+- [Git & Commit Conventions](engineering/GIT_AND_COMMIT_CONVENTIONS.md) — Conventional Commits format, scopes, PR requirements, and atomic commit policy.
+- [Testing Standards](engineering/TESTING_STANDARDS.md) — Staged testing pyramid, risk-weighted coverage benchmarks, and anti-deception rules.
+- [CI/CD Standards](engineering/CI_CD_STANDARDS.md) — Multi-stage GitHub Actions pipeline, fast static checks, and container signing.
+- [Documentation Standards & Taxonomy](engineering/DOCUMENTATION_STANDARDS.md) — Single source of truth, factual rigor, and markdown conventions.
+- [Database Design & Schema](engineering/DATABASE_DESIGN.md) — Comprehensive PostgreSQL schema, table definitions, indexes, and ER diagram.
+- [REST API Specification](engineering/API_SPECIFICATION.md) — Full API reference with request/response schemas and examples.
 - [API Error Contract](engineering/API_ERROR_CONTRACT.md) — Standardized JSON error response format and error codes.
-- [Background Job Specification](engineering/BACKGROUND_JOB_SPECIFICATION.md) — BullMQ queue names, job payloads, retries, and dead-letter handling.
-- [Domain Event Contracts](engineering/EVENT_CONTRACTS.md) — Internal event schemas, producers, and consumers.
-- [Multi-Tenancy & Authorization Model](engineering/MULTI_TENANCY.md) — Organization boundary enforcement, RBAC, and middleware checks.
-- [Environment Variables](engineering/ENVIRONMENT_VARIABLES.md) — Complete environment reference for all deployment environments.
-- [Testing Strategy](engineering/TESTING_STRATEGY.md) — Unit, integration, multi-tenant isolation, and E2E testing framework.
-- [Implementation Plan](engineering/IMPLEMENTATION_PLAN.md) — Phased engineering breakdown (Phase 0 through Phase 6) with tasks and acceptance criteria.
+- [Provider Contracts](engineering/PROVIDER_CONTRACTS.md) — Contract definitions for cloud deployment providers.
 
 ---
 
-## 5. Deployment & Integrations (`docs/deployment/` & `docs/integrations/`)
-Runbooks and specifications for running and connecting OpsPilot.
-- [Local Development Guide](deployment/LOCAL_DEVELOPMENT.md) — Setting up Docker Compose, local PostgreSQL, and Redis.
-- [AWS ECS Deployment Guide](deployment/AWS_ECS_DEPLOYMENT.md) — Cross-account IAM role setup, ECR image pushing, and task definition lifecycle.
-- [VPS Docker Deployment Guide](deployment/VPS_DOCKER_DEPLOYMENT.md) — Ubuntu server preparation, SSH key isolation, and docker-compose deployment.
-- [CI/CD Pipeline](deployment/CI_CD.md) — GitHub Actions pipeline stages, secret scanning, and automated releases.
-- [Rollback Procedures](deployment/ROLLBACK_PROCEDURES.md) — Safe, deterministic rollback execution for ECS and VPS targets.
+## 5. Development & Configuration (`docs/development/`)
+Contributor environment setup, local database initialization, and environment variable references.
+- [Local Development Guide](development/LOCAL_DEVELOPMENT.md) — Setting up Node.js, local PostgreSQL (Unix socket or Docker), Redis, and tests.
+- [Environment Configuration Catalog](development/ENVIRONMENT_CONFIGURATION.md) — Comprehensive environment variable reference, Zod schema validation, and key rotation.
+
+---
+
+## 6. Testing & Quality Assurance (`docs/testing/`)
+Test architecture, mock guidelines, and regression verification.
+- [Test Strategy & Test Architecture](testing/TEST_STRATEGY.md) — Vitest test harness architecture, database transaction isolation, and cryptographic tests.
+
+---
+
+## 7. Release Engineering (`docs/releases/`)
+Release lifecycle, versioning policies, and supply chain security.
+- [Release Process](releases/RELEASE_PROCESS.md) — SemVer rules, automated changelogs, multi-arch containers, and Sigstore Cosign image signing.
+
+---
+
+## 8. Security Specifications (`docs/security/`)
+Security specifications ensuring tenant isolation and infrastructure protection.
+- [Security Architecture Canonical Reference](security/SECURITY_ARCHITECTURE.md) — Canonical reference to architecture specification.
+- [Threat Model (STRIDE)](security/THREAT_MODEL.md) — Asset catalog, threat actors, trust boundary diagram, and attack mitigations.
+- [Credential Management](security/CREDENTIAL_MANAGEMENT.md) — Envelope encryption using AES-256-GCM / Master KEK for infrastructure secrets.
+- [Deployment Runner Security](security/DEPLOYMENT_RUNNER_SECURITY.md) — Isolating untrusted customer Dockerfiles and build scripts.
+- [AI Agent Security](security/AI_AGENT_SECURITY.md) — Defenses against prompt injection, data exfiltration, and unauthorized actions.
+
+---
+
+## 9. Cloud Integrations (`docs/integrations/`)
+Specifications for external cloud platforms and providers.
 - [GitHub Integration](integrations/GITHUB_INTEGRATION.md) — App manifest, permissions, and webhook signature verification.
 - [AWS Integration](integrations/AWS_INTEGRATION.md) — IAM external ID assumption and CloudWatch telemetry integration.
 - [VPS Integration](integrations/VPS_INTEGRATION.md) — SSH connectivity validation and Docker socket security.
-- [Cloudflare Integration Audit](integrations/cloudflare/CLOUDFLARE_INTEGRATION_AUDIT.md) — Baseline audit of Cloudflare Workers and Pages feasibility.
-- [Cloudflare Architecture Proposal](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_PROPOSAL.md) — Modular monolith extension, provider hierarchy, and sequence workflows.
-- [Cloudflare Gap Analysis](integrations/cloudflare/CLOUDFLARE_GAP_ANALYSIS.md) — 15-point architecture gap analysis, container assumptions, and risk mitigations.
-- [Cloudflare Implementation Plan](integrations/cloudflare/CLOUDFLARE_IMPLEMENTATION_PLAN.md) — 10-phase dependency-aware engineering execution plan.
-- [Cloudflare Architecture Decisions](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md) — ADRs 0014–0018 governing Cloudflare integration choices.
-- [Cloudflare Architecture Review](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_REVIEW.md) — Formal adversarial review and verification report.
+- [Cloudflare Architecture Decisions](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md) — ADRs 0014–0018 governing Cloudflare Workers & Pages.
+- [Cloudflare Adversarial Audit](integrations/cloudflare/CLOUDFLARE_ADVERSARIAL_AUDIT.md) — Independent adversarial audit of Cloudflare implementation.
 
 ---
 
-## 6. AI Systems & Incident Simulation (`docs/ai/`)
+## 10. AI Operations (`docs/ai/`)
 Specifications for the AI Gateway, tool execution sandbox, and incident validation test suite.
 - [AI System Overview](ai/AI_SYSTEM_OVERVIEW.md) — Gateway architecture, token budgets, prompt engineering, and structured outputs.
-- [Tool Specifications](ai/TOOL_SPECIFICATIONS.md) — Full interface definitions, input schemas, validation rules, and output schemas for all 9 investigation tools.
-- [Incident Investigation Walkthrough](ai/INCIDENT_INVESTIGATION.md) — Concrete step-by-step example of investigating a database connection pool exhaustion incident.
-- [Incident Simulator (15 Scenarios)](ai/INCIDENT_SIMULATOR.md) — Deterministic failure injection scenarios (Redis failure, memory leak, 500 error spike, bad deployment, etc.) for testing the AI agent.
-- [AI Agent Evaluation Framework](ai/AI_EVALUATION.md) — Benchmarking methodology for accuracy, evidence quality, hallucination prevention, and cost tracking.
-
----
-
-## 7. Security (`docs/security/`)
-Security specifications ensuring tenant isolation and infrastructure protection.
-- [Threat Model (STRIDE)](security/THREAT_MODEL.md) — Asset catalog, threat actors, trust boundary diagram, and attack mitigations.
-- [Credential Management](security/CREDENTIAL_MANAGEMENT.md) — Envelope encryption using AES-256-GCM / AWS KMS for infrastructure secrets.
-- [Deployment Runner Security](security/DEPLOYMENT_RUNNER_SECURITY.md) — Isolating untrusted customer Dockerfiles and build scripts.
-- [AI Agent Security](security/AI_AGENT_SECURITY.md) — Defenses against prompt injection, data exfiltration, and unauthorized actions.
+- [Tool Specifications](ai/TOOL_SPECIFICATIONS.md) — Full interface definitions, input schemas, and output schemas for investigation tools.
+- [Incident Investigation Walkthrough](ai/INCIDENT_INVESTIGATION.md) — Step-by-step example of investigating database pool exhaustion.
+- [Incident Simulator (15 Scenarios)](ai/INCIDENT_SIMULATOR.md) — Deterministic failure injection scenarios.
+- [AI Agent Evaluation Framework](ai/AI_EVALUATION.md) — Benchmarking methodology for accuracy and evidence quality.

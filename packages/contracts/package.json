@@ -15,5 +15,5 @@
     "zod": "^4.6.7"
   },
   "author": "OpsPilot Core Team",
-  "license": "UNLICENSED"
+  "license": "Apache-2.0"
 }

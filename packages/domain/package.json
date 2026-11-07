@@ -12,5 +12,5 @@
   },
   "keywords": ["opspilot", "domain"],
   "author": "OpsPilot Core Team",
-  "license": "UNLICENSED"
+  "license": "Apache-2.0"
 }

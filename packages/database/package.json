@@ -13,11 +13,12 @@
   "dependencies": {
     "@opspilot/domain": "*",
     "@opspilot/contracts": "*",
+    "@opspilot/security": "*",
     "pg": "^8.13.0"
   },
   "devDependencies": {
     "@types/pg": "^8.11.10"
   },
   "author": "OpsPilot Core Team",
-  "license": "UNLICENSED"
+  "license": "Apache-2.0"
 }

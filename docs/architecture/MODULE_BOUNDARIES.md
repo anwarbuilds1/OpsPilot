@@ -98,11 +98,12 @@ flowchart TD
 ---
 
 ### 2.3 IntegrationsModule (`apps/api/src/modules/integrations`)
-- **Primary Responsibility:** Managing connections to GitHub Apps, AWS accounts (IAM roles), and VPS hosts. Secure envelope encryption and decryption of credentials.
+- **Primary Responsibility:** Managing connections to GitHub Apps, AWS accounts (IAM roles), VPS hosts, and Cloudflare accounts (scoped API tokens). Secure envelope encryption and decryption of credentials (`AES-256-GCM` with tenant-specific HKDF keys). Deep permission probing via `CloudflareApiClient`.
 - **Owned Entities:** `integrations`, `integration_credentials`, `deployment_targets`.
 - **Public Interface:**
   - `IntegrationsService.getDecryptedCredential(integrationId: string, orgId: string): Promise<DecryptedSecret>`.
   - `IntegrationsService.validateConnection(integrationId: string): Promise<ConnectionStatus>`.
+  - `IntegrationsService.probeCloudflareCapabilities(accountId: string, token: string): Promise<CloudflareProbedCapabilities>`.
 - **Dependencies:** `OrganizationsModule`, `AuditModule`.
 - **Events Published:** `integration.connected`, `integration.validated`, `integration.revoked`.
 - **Forbidden:** Must never expose unencrypted credentials to controllers or external API responses.
@@ -110,11 +111,11 @@ flowchart TD
 ---
 
 ### 2.4 DeploymentsModule (`apps/api/src/modules/deployments`)
-- **Primary Responsibility:** Deployment state machine, dispatching build and deployment jobs to BullMQ, monitoring stabilization, and executing rollbacks.
+- **Primary Responsibility:** Deployment state machine, dispatching build and deployment jobs to BullMQ, monitoring stabilization, and executing rollbacks. Houses concrete provider adapters: `AwsEcsProvider`, `VpsDockerProvider`, `CloudflareWorkersProvider` (Workers Versions & Deployments API), and `CloudflarePagesProvider` (Direct Upload API).
 - **Owned Entities:** `deployments`, `deployment_events`, `deployment_artifacts`.
 - **Public Interface:**
   - `DeploymentsService.triggerDeployment(serviceId: string, commitSha: string): Promise<Deployment>`.
-  - `DeploymentsService.rollback(deploymentId: string): Promise<RollbackResult>`.
+  - `DeploymentsService.rollback(deploymentId: string, targetVersion?: string): Promise<RollbackResult>`.
   - `DeploymentsService.getDeploymentHistory(serviceId: string, limit: number): Promise<Deployment[]>`.
 - **Dependencies:** `ServicesModule`, `IntegrationsModule`, `AuditModule`.
 - **Events Published:** `deployment.requested`, `deployment.started`, `deployment.succeeded`, `deployment.failed`, `deployment.rolled_back`.

@@ -1,0 +1,25 @@
+# OpsPilot Monorepo Code Ownership
+# Lines starting with '#' are comments.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default global owner
+* @anwar
+
+# Core Monorepo Security & Cryptography
+/packages/security/ @anwar
+/docs/security/ @anwar
+
+# Database Migrations & Schemas
+/packages/database/src/migrations/ @anwar
+
+# CI/CD Workflows & Release Engineering
+/.github/workflows/ @anwar
+/docs/releases/ @anwar
+
+# Build Runners & Container Sandboxes
+/docker/runners/ @anwar
+
+# Architecture Decisions & Governance
+/docs/decisions/ @anwar
+/GOVERNANCE.md @anwar
+/SECURITY.md @anwar
