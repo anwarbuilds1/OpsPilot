@@ -1,0 +1,23 @@
+{
+  "name": "@opspilot/application",
+  "version": "0.1.0-spec",
+  "private": true,
+  "description": "Application use cases, ports, and orchestrators for OpsPilot",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --dry",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opspilot/domain": "*",
+    "@opspilot/contracts": "*",
+    "@opspilot/security": "*"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  },
+  "license": "Apache-2.0"
+}
