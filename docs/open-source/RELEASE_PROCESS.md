@@ -1,29 +1,25 @@
-# Release Process & Versioning Policy
+# Release Process & Versioning Policy (Deprecated)
 
-> **Versioning Standard:** Semantic Versioning (SemVer 2.0.0)  
-> **Release Cadence:** Bi-weekly minor releases, ad-hoc security patches
+> [!NOTE]
+> **Canonical Document Location:** [`docs/releases/RELEASE_PROCESS.md`](../releases/RELEASE_PROCESS.md)
+> This open-source release stub has been superseded by the canonical release engineering specification, which details automated changelogs, Syft SPDX SBOM generation, Sigstore Cosign container signing, and security hotfix procedures.
 
-This document defines the release lifecycle, tagging conventions, and changelog management for OpsPilot.
+For the authoritative release engineering guide, versioning policies, and signing instructions, please see:
+
+👉 [**OpsPilot Release Engineering & Release Process**](../releases/RELEASE_PROCESS.md)
 
 ---
 
-## 1. Versioning Format
+### Historical Summary (Archived Context)
 
-OpsPilot follows `MAJOR.MINOR.PATCH`:
+OpsPilot follows **Semantic Versioning 2.0.0 (`MAJOR.MINOR.PATCH`)**:
 - **MAJOR:** Incompatible API changes, breaking database migrations, or significant architectural shifts.
 - **MINOR:** Backward-compatible new features, new deployment provider adapters, or enhanced investigation tools.
 - **PATCH:** Backward-compatible bug fixes and security hotfixes.
 
----
-
-## 2. Release Steps
-
+#### Historical Release Steps:
 1. **Pre-Release Freeze:** Verify all CI checks on `main` are green.
 2. **Update Changelog:** Move items from `[Unreleased]` in `CHANGELOG.md` into the new release header with the release date.
-3. **Tag Release:**
-   ```bash
-   git tag -a v0.1.0 -m "Release v0.1.0"
-   git push origin v0.1.0
-   ```
-4. **Automated Docker Publishing:** The GitHub Actions release workflow builds multi-arch container images (`linux/amd64`, `linux/arm64`) and pushes them to GitHub Container Registry (GHCR) and Docker Hub.
+3. **Tag Release:** Tag annotated release on Git.
+4. **Automated Docker Publishing:** The GitHub Actions release workflow builds multi-arch container images (`linux/amd64`, `linux/arm64`) and pushes them to GHCR.
 5. **Publish GitHub Release:** Generate release notes and link to the changelog.

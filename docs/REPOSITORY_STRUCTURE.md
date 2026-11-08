@@ -16,7 +16,7 @@ OpsPilot/
 ├── apps/                      # Executable applications (Deployable units)
 │   ├── api/                   # NestJS Core Application API (Control Plane)
 │   ├── dashboard/             # Next.js 14+ App Router Frontend
-│   └── worker/                # BullMQ Background Worker Process
+│   └── worker/                # Background Worker Process (PostgreSQL Queue)
 ├── packages/                  # Shared modular libraries and adapters
 │   ├── domain/                # Pure domain entities, value objects, domain events (0 deps)
 │   ├── contracts/             # Shared DTOs, API contracts, Zod schemas, Config schema
@@ -63,14 +63,14 @@ OpsPilot/
 9. **Interface ownership:** Consumes contracts from `@opspilot/contracts`.
 
 #### 3. `apps/worker`
-1. **Responsibility:** Headless execution process running BullMQ job processors for deployments, incident telemetry correlation, and AI investigations.
-2. **What belongs inside:** Worker bootstrapper, BullMQ job processors, worker signal handlers, heartbeat emitters.
+1. **Responsibility:** Headless execution process running background job processors for deployments, incident telemetry correlation, and AI investigations (PostgreSQL-backed queue — selected architecture, implementation pending).
+2. **What belongs inside:** Worker bootstrapper, background job processors, worker signal handlers, heartbeat emitters.
 3. **What must never belong inside:** HTTP controllers, UI components, HTML templates.
 4. **Public exports:** None (deployable worker binary).
 5. **Allowed dependencies:** `@opspilot/contracts`, `@opspilot/application`, `@opspilot/database`, `@opspilot/security`, `@opspilot/deployment-providers`, `@opspilot/observability`, `@opspilot/config`.
 6. **Forbidden dependencies:** NestJS HTTP controllers, React, Next.js.
 7. **Package type:** Executable worker process.
-8. **Testing:** Integration tests with real Redis/PostgreSQL test containers; job execution tests.
+8. **Testing:** Integration tests with PostgreSQL test containers; job execution tests.
 9. **Interface ownership:** Composes queue consumer adapter with application driving job contracts and use cases (`DeploymentExecutionEngine`).
 
 ---
@@ -216,7 +216,7 @@ flowchart LR
         TP6["packages/security (Envelope Encryption Vault)"]
         TP7["apps/api (Control Plane API)"]
         TP8["apps/dashboard (Next.js Frontend)"]
-        TP9["apps/worker (BullMQ Worker Process)"]
+        TP9["apps/worker (Background Worker Process)"]
     end
 
     CP1 -->|Move Engine to Application| TP2

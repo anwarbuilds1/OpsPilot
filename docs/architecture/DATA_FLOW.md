@@ -14,9 +14,9 @@ sequenceDiagram
     participant GH as GitHub
     participant Ingress as API Ingress (/api/v1/integrations/github/webhook)
     participant Auth as Webhook Validator
-    participant Dedupe as Redis Idempotency Cache
+    participant Dedupe as Idempotency Store (PostgreSQL / Cache)
     participant DB as PostgreSQL State Store
-    participant Queue as BullMQ (deployment-queue)
+    participant Queue as PostgreSQL-Backed Queue (Implementation Pending)
     participant Worker as Deployment Worker
 
     GH->>Ingress: POST webhook (X-Hub-Signature-256, X-GitHub-Delivery)
@@ -25,12 +25,12 @@ sequenceDiagram
         Auth-->>Ingress: Signature Mismatch
         Ingress-->>GH: HTTP 401 Unauthorized
     else Valid Signature
-        Auth->>Dedupe: Check delivery GUID (SETNX github:delivery:<id>)
+        Auth->>Dedupe: Check delivery GUID (delivery_id)
         alt Duplicate Delivery
             Dedupe-->>Ingress: Key Exists
             Ingress-->>GH: HTTP 200 OK (Ignored duplicate)
         else Fresh Delivery
-            Dedupe-->>Auth: Key Set (TTL: 24h)
+            Dedupe-->>Auth: Record Created
             Auth->>DB: Lookup Service matching Repository & Branch
             DB-->>Auth: Service Record Found
             Auth->>DB: Insert Deployment (status: 'Queued', commit: SHA)
@@ -148,7 +148,7 @@ sequenceDiagram
     participant Worker as Telemetry Worker
     participant DB as PostgreSQL (Telemetry Partition)
     participant Rule as Detection Rule Evaluator
-    participant Queue as BullMQ (incident-queue)
+    participant Queue as PostgreSQL-Backed Queue (Implementation Pending)
 
     loop Telemetry Evaluation Loop (every 30s)
         Worker->>Target: HTTP GET /health

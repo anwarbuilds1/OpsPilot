@@ -10,13 +10,14 @@ This documentation serves as the single source of truth for software architects,
 
 These authoritative documents establish the baseline audit, monorepo structure, architectural decisions, and phased implementation roadmap for the platform:
 
-- [**Project Architecture Final Review**](PROJECT_ARCHITECTURE_FINAL_REVIEW.md) — Authoritative final review report establishing architecture corrections, runner security, cryptographic standards, and approval readiness.
-- [**Project Foundation Blueprint Reconciliation Report**](PROJECT_FOUNDATION_RECONCILIATION.md) — Master reconciliation of repository evidence, final package ownership, technology matrix, and open questions.
-- [**Project Foundation Audit Report**](PROJECT_FOUNDATION_AUDIT.md) — Comprehensive repository state audit and formal classification of the 10 adversarial audit findings (`SEC-01` through `UI-01`).
-- [**Project Foundation Architectural Decisions**](PROJECT_FOUNDATION_DECISIONS.md) — Canonical decisions on monorepo topology, engine decoupling, NIST SP 800-57 envelope encryption, and Apache-2.0 licensing.
-- [**Project Foundation Remediation Plan**](PROJECT_FOUNDATION_REMEDIATION_PLAN.md) — Dependency-ordered sequencing of the 10 pre-implementation blockers into governance tiers.
+- [**Project Architecture Final Review**](reports/PROJECT_ARCHITECTURE_FINAL_REVIEW.md) — Authoritative final review report establishing architecture corrections, runner security, cryptographic standards, and approval readiness.
+- [**Project Foundation Blueprint Reconciliation Report**](reports/PROJECT_FOUNDATION_RECONCILIATION.md) — Master reconciliation of repository evidence, final package ownership, technology matrix, and open questions.
+- [**Project Foundation Audit Report**](reports/PROJECT_FOUNDATION_AUDIT.md) — Comprehensive repository state audit and formal classification of the 10 adversarial audit findings (`SEC-01` through `UI-01`).
+- [**Project Foundation Architectural Decisions**](reports/PROJECT_FOUNDATION_DECISIONS.md) — Canonical decisions on monorepo topology, engine decoupling, NIST SP 800-57 envelope encryption, and Apache-2.0 licensing.
+- [**Project Foundation Remediation Plan**](reports/PROJECT_FOUNDATION_REMEDIATION_PLAN.md) — Dependency-ordered sequencing of the 10 pre-implementation blockers into governance tiers.
 - [**Canonical Repository Structure**](REPOSITORY_STRUCTURE.md) — Detailed package responsibility matrix, inclusions/exclusions, dependency rules, and interface ownership.
-- [**Phased Implementation Roadmap**](PROJECT_IMPLEMENTATION_ROADMAP.md) — Granular 8-phase execution roadmap (Phases 0–7) with scope, atomic commits, acceptance, and exit criteria.
+- [**Phased Implementation Roadmap**](phases/PROJECT_IMPLEMENTATION_ROADMAP.md) — Granular 8-phase execution roadmap (Phases 0–7) with scope, atomic commits, acceptance, and exit criteria.
+- [**Phase 0 Scope & Commit Audit**](phases/PHASE_0_SCOPE_AND_COMMIT_AUDIT.md) — Formal audit report ratifying Phase 0 acceptance.
 
 ---
 
@@ -32,10 +33,12 @@ docs/
 ├── development/      # Contributor Setup, Local PostgreSQL/Redis, Environment Config
 ├── testing/          # Testing Strategy, Harness Architecture, Coverage Standards
 ├── releases/         # Release Engineering, SemVer, Signing, Provenance
-├── deployment/       # AWS ECS, VPS Docker, Local Dev, CI/CD, Rollback
+├── deployment/       # AWS ECS, VPS Docker, Docker Compose Dev, CI/CD, Rollback
 ├── integrations/     # GitHub, AWS, VPS, Cloudflare, OpenTelemetry
 ├── ai/               # AI Gateway, Tool Specs, Incident Simulation & Evaluation
-└── operations/       # Monitoring, Incident Response, Troubleshooting Runbooks
+├── operations/       # Monitoring, Incident Response, Troubleshooting Runbooks
+├── phases/           # Phased Implementation Roadmap & Phase Acceptance Records
+└── reports/          # Foundation Audit Reports, Reviews & Remediation Plans
 ```
 
 ---
@@ -144,6 +147,8 @@ Specifications for external cloud platforms and providers.
 - [AWS Integration](integrations/AWS_INTEGRATION.md) — IAM external ID assumption and CloudWatch telemetry integration.
 - [VPS Integration](integrations/VPS_INTEGRATION.md) — SSH connectivity validation and Docker socket security.
 - [Cloudflare Architecture Decisions](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md) — ADRs 0014–0018 governing Cloudflare Workers & Pages.
+- [Cloudflare Architecture Review](integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_REVIEW.md) — Comprehensive adversarial architectural review.
+- [Cloudflare Implementation Report](integrations/cloudflare/CLOUDFLARE_IMPLEMENTATION_REPORT.md) — Provider adapter implementation report retained under scope exception.
 - [Cloudflare Adversarial Audit](integrations/cloudflare/CLOUDFLARE_ADVERSARIAL_AUDIT.md) — Independent adversarial audit of Cloudflare implementation.
 
 ---
@@ -155,3 +160,32 @@ Specifications for the AI Gateway, tool execution sandbox, and incident validati
 - [Incident Investigation Walkthrough](ai/INCIDENT_INVESTIGATION.md) — Step-by-step example of investigating database pool exhaustion.
 - [Incident Simulator (15 Scenarios)](ai/INCIDENT_SIMULATOR.md) — Deterministic failure injection scenarios.
 - [AI Agent Evaluation Framework](ai/AI_EVALUATION.md) — Benchmarking methodology for accuracy and evidence quality.
+
+---
+
+## 11. Deployment Infrastructure (`docs/deployment/`)
+Environment configuration, infrastructure provisioning, and rollback operations.
+- [Docker Compose Local Deployment](deployment/DOCKER_COMPOSE_DEVELOPMENT.md) — Multi-container local backing topology and port allocations.
+- [AWS ECS Deployment](deployment/AWS_ECS_DEPLOYMENT.md) — Task definitions, Fargate capacity providers, and target group routing.
+- [VPS Docker Deployment](deployment/VPS_DOCKER_DEPLOYMENT.md) — Single-host SSH execution, Compose deployments, and rollback manifests.
+- [Deployment Lifecycle](deployment/DEPLOYMENT_LIFECYCLE.md) — Ten-stage deployment execution pipeline and state machine transitions.
+- [Rollback Procedures](deployment/ROLLBACK_PROCEDURES.md) — Automated health check triggers and provider-specific rollbacks.
+- [Secrets Management](deployment/SECRETS_MANAGEMENT.md) — Secret injection, masking, and environment credential lifecycles.
+- [CI/CD Deployment Pipeline](deployment/CI_CD.md) — GitHub Actions deployment orchestration and release triggers.
+
+---
+
+## 12. Phased Roadmap & Acceptance Records (`docs/phases/`)
+Execution roadmaps and formal phase audit acceptance records.
+- [Phased Implementation Roadmap](phases/PROJECT_IMPLEMENTATION_ROADMAP.md) — Authoritative 8-phase implementation roadmap (Phases 0–7).
+- [Phase 0 Scope & Commit Audit](phases/PHASE_0_SCOPE_AND_COMMIT_AUDIT.md) — Formal audit report ratifying Phase 0 acceptance and scope exceptions.
+
+---
+
+## 13. Reports, Audits & Reviews (`docs/reports/`)
+Cross-cutting architectural reviews, baseline audits, decisions, and remediation plans.
+- [Project Architecture Final Review](reports/PROJECT_ARCHITECTURE_FINAL_REVIEW.md) — Baseline review of architecture corrections and approval readiness.
+- [Project Foundation Audit Report](reports/PROJECT_FOUNDATION_AUDIT.md) — Forensic audit and classification of findings `SEC-01` through `UI-01`.
+- [Project Foundation Architectural Decisions](reports/PROJECT_FOUNDATION_DECISIONS.md) — Foundation decisions on topology, engine decoupling, and encryption.
+- [Project Foundation Blueprint Reconciliation Report](reports/PROJECT_FOUNDATION_RECONCILIATION.md) — Master reconciliation of repository evidence and package boundaries.
+- [Project Foundation Remediation Plan](reports/PROJECT_FOUNDATION_REMEDIATION_PLAN.md) — Prioritized remediation plan for pre-implementation blockers.

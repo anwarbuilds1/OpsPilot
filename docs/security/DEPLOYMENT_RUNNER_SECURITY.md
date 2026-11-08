@@ -9,9 +9,18 @@ When OpsPilot processes customer Git repositories, it executes untrusted build i
 
 This document specifies the complete security architecture of the **Host-Side Runner Orchestrator** and the **Ephemeral Container Sandbox**.
 
+> [!WARNING]
+> **Planned Architecture Specification (November 2026):**
+> This specification describes the **target Phase 1 execution architecture**.
+> - **No host-side Docker Engine orchestrator exists** in the current codebase.
+> - **No process currently launches isolated build containers.**
+> - **Docker security flags are generated as configuration specifications** only: [`HardenedBuildRunner`](../../packages/deployment-providers/src/runners/hardened-build-runner.ts) validates parameters in TypeScript and synthesizes an in-memory argument array, but does not interact with `/var/run/docker.sock` or any Docker daemon.
+> - **Network egress controls are not enforced by a live controller.** Subnet CIDRs are string literals; no host iptables or Docker bridge network policies are configured.
+> - **The diagrams and flows below represent the intended Phase 1 architecture** to be implemented upon Project Owner authorization.
+
 ---
 
-## 1. Privileged Controller vs. Untrusted Sandbox Boundary
+## 1. Privileged Controller vs. Untrusted Sandbox Boundary (Target Phase 1 Architecture)
 
 OpsPilot enforces a strict architectural and operating-system-level boundary separating the trusted host worker from untrusted build containers:
 

@@ -12,7 +12,7 @@ Before seeking community support, please consult the authoritative documentation
 - **Setup & Local Development:** [`docs/development/LOCAL_DEVELOPMENT.md`](docs/development/LOCAL_DEVELOPMENT.md)
 - **Environment Configuration:** [`docs/development/ENVIRONMENT_CONFIGURATION.md`](docs/development/ENVIRONMENT_CONFIGURATION.md)
 - **Engineering Standards:** [`docs/engineering/ENGINEERING_STANDARDS.md`](docs/engineering/ENGINEERING_STANDARDS.md)
-- **Implementation Roadmap:** [`docs/PROJECT_IMPLEMENTATION_ROADMAP.md`](docs/PROJECT_IMPLEMENTATION_ROADMAP.md)
+- **Implementation Roadmap:** [`docs/phases/PROJECT_IMPLEMENTATION_ROADMAP.md`](docs/phases/PROJECT_IMPLEMENTATION_ROADMAP.md)
 - **Troubleshooting Guide:** [`docs/operations/TROUBLESHOOTING.md`](docs/operations/TROUBLESHOOTING.md)
 
 ---

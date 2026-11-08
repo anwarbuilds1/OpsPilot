@@ -42,7 +42,7 @@ This document outlines the governance model for **OpsPilot**. The goal is to pro
 - **Standard Code Changes:** Require approval from at least one Core Maintainer and passing CI checks.
 - **Architectural Changes:** Require a written ADR submitted as a PR to `docs/decisions/`. The ADR must remain open for discussion for a minimum of **5 business days** to allow community feedback before maintainer sign-off.
 - **Breaking Changes:** Require explicit sign-off from the Project Lead and must include a documented migration path in `docs/releases/RELEASE_PROCESS.md`.
-- **Pre-Implementation Remediation:** The 10 blockers identified in [Project Foundation Remediation Plan](docs/PROJECT_FOUNDATION_REMEDIATION_PLAN.md) must be addressed before general feature development.
+- **Pre-Implementation Remediation:** The 10 blockers identified in [Project Foundation Remediation Plan](docs/reports/PROJECT_FOUNDATION_REMEDIATION_PLAN.md) must be addressed before general feature development.
 
 ---
 

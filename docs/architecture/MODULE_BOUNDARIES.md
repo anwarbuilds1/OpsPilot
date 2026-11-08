@@ -111,7 +111,7 @@ flowchart TD
 ---
 
 ### 2.4 DeploymentsModule (`apps/api/src/modules/deployments`)
-- **Primary Responsibility:** Deployment state machine, dispatching build and deployment jobs to BullMQ, monitoring stabilization, and executing rollbacks. Houses concrete provider adapters: `AwsEcsProvider`, `VpsDockerProvider`, `CloudflareWorkersProvider` (Workers Versions & Deployments API), and `CloudflarePagesProvider` (Direct Upload API).
+- **Primary Responsibility:** Deployment state machine, dispatching build and deployment jobs via `IJobPublisherPort` (PostgreSQL-backed queue — selected architecture, implementation pending), monitoring stabilization, and executing rollbacks. Houses concrete provider adapters: `AwsEcsProvider`, `VpsDockerProvider`, `CloudflareWorkersProvider` (Workers Versions & Deployments API), and `CloudflarePagesProvider` (Direct Upload API).
 - **Owned Entities:** `deployments`, `deployment_events`, `deployment_artifacts`.
 - **Public Interface:**
   - `DeploymentsService.triggerDeployment(serviceId: string, commitSha: string): Promise<Deployment>`.

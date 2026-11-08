@@ -30,10 +30,10 @@ This document formally verifies, classifies, and documents the actual repository
   - Untracked Cloudflare implementation files (`packages/deployment-providers/src/cloudflare/`, `packages/deployment-providers/src/engine/`).
   - 7 untracked test suites (`integrations-repository.spec.ts`, `cloudflare-api-client.spec.ts`, `cloudflare-pages-provider.spec.ts`, `cloudflare-telemetry-service.spec.ts`, `cloudflare-workers-provider.spec.ts`, `deployment-execution-engine.spec.ts`, `envelope-encryption.spec.ts`).
   - Untracked audit documents and foundation reports.
-- **License File Status:** A root file named [`LICENSE`](../LICENSE) exists in the repository. However, it contains an **all-rights-reserved placeholder notice** stating that open-source license selection is pending formal approval in ADR-0013. No active OSI-approved open-source license grant is currently in effect.
+- **License File Status:** A root file named [`LICENSE`](../../LICENSE) exists in the repository. However, it contains an **all-rights-reserved placeholder notice** stating that open-source license selection is pending formal approval in ADR-0013. No active OSI-approved open-source license grant is currently in effect.
 
 ### 2.2 Package Structure & Workspace Configuration
-OpsPilot is organized as an npm workspace monorepo configured via the root [`package.json`](../package.json):
+OpsPilot is organized as an npm workspace monorepo configured via the root [`package.json`](../../package.json):
 ```json
 {
   "name": "opspilot",
@@ -104,7 +104,7 @@ flowchart TD
 #### Finding 1: SEC-01 — Deterministic HKDF Derivation is Not Envelope Encryption
 - **Severity:** Critical (CVSS 8.8)
 - **Status:** **Confirmed**
-- **Location:** [`packages/security/src/encryption/envelope-encryption.service.ts`](../packages/security/src/encryption/envelope-encryption.service.ts#L64-L88)
+- **Location:** [`packages/security/src/encryption/envelope-encryption.service.ts`](../../packages/security/src/encryption/envelope-encryption.service.ts#L64-L88)
 - **Evidence:**
   The implementation derives a "DEK" deterministically using HKDF with info string `'opspilot-dek-v1-' + organizationId`:
   ```typescript
@@ -116,7 +116,7 @@ flowchart TD
 #### Finding 2: SEC-02 — Hardcoded Master Key Fallback
 - **Severity:** Critical (CVSS 9.1)
 - **Status:** **Confirmed**
-- **Location:** [`packages/security/src/encryption/envelope-encryption.service.ts`](../packages/security/src/encryption/envelope-encryption.service.ts#L33)
+- **Location:** [`packages/security/src/encryption/envelope-encryption.service.ts`](../../packages/security/src/encryption/envelope-encryption.service.ts#L33)
 - **Evidence:**
   ```typescript
   const masterKey = config?.masterKey ?? process.env['OPSPILOT_MASTER_KEY'] ?? 'opspilot-default-dev-master-key-2026';
@@ -127,7 +127,7 @@ flowchart TD
 #### Finding 3: API-01 — Pages Direct Upload Protocol Violation
 - **Severity:** Critical (Functional Defect)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/cloudflare/common/cloudflare-api-client.ts`](../packages/deployment-providers/src/cloudflare/common/cloudflare-api-client.ts#L173-L200)
+- **Location:** [`packages/deployment-providers/src/cloudflare/common/cloudflare-api-client.ts`](../../packages/deployment-providers/src/cloudflare/common/cloudflare-api-client.ts#L173-L200)
 - **Evidence:**
   Cloudflare Pages Direct Upload mandates a two-stage protocol:
   1. POST manifest of file hashes to `/pages/projects/{projectName}/upload-tokens` or `/pages/projects/{projectName}/deployments` to identify missing hashes.
@@ -138,7 +138,7 @@ flowchart TD
 #### Finding 4: SEC-05 — Decryption of Revoked Credentials
 - **Severity:** High (Security Bypass)
 - **Status:** **Confirmed**
-- **Location:** [`packages/database/src/repositories/integrations.repository.ts`](../packages/database/src/repositories/integrations.repository.ts#L112-L138)
+- **Location:** [`packages/database/src/repositories/integrations.repository.ts`](../../packages/database/src/repositories/integrations.repository.ts#L112-L138)
 - **Evidence:**
   `getDecryptedSecret()` queries `integration_credentials` directly by `integrationId` without joining or asserting that `integrations.status = 'active'`. A user or worker can decrypt secrets belonging to an integration that was marked `revoked` or `suspended`.
 - **Architectural Impact:** Violates the principle of least privilege and revocation enforcement.
@@ -146,15 +146,15 @@ flowchart TD
 #### Finding 5: SEC-06 — HardenedBuildRunner Not Invoked by Cloudflare Providers
 - **Severity:** High (Security Boundary Violation)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/providers/cloudflare-workers.provider.ts`](../packages/deployment-providers/src/providers/cloudflare-workers.provider.ts) & [`cloudflare-pages.provider.ts`](../packages/deployment-providers/src/providers/cloudflare-pages.provider.ts)
+- **Location:** [`packages/deployment-providers/src/providers/cloudflare-workers.provider.ts`](../../packages/deployment-providers/src/providers/cloudflare-workers.provider.ts) & [`cloudflare-pages.provider.ts`](../../packages/deployment-providers/src/providers/cloudflare-pages.provider.ts)
 - **Evidence:**
-  Neither provider imports or delegates to `HardenedBuildRunner`. Furthermore, [`docker/runners/scripts/build-entrypoint.sh`](../docker/runners/scripts/build-entrypoint.sh#L29) uses `eval "${OPSPILOT_BUILD_COMMAND}"`, creating an unconstrained command injection surface inside the runner image.
+  Neither provider imports or delegates to `HardenedBuildRunner`. Furthermore, [`docker/runners/scripts/build-entrypoint.sh`](../../docker/runners/scripts/build-entrypoint.sh#L29) uses `eval "${OPSPILOT_BUILD_COMMAND}"`, creating an unconstrained command injection surface inside the runner image.
 - **Architectural Impact:** Untrusted customer repository code cannot be safely built.
 
 #### Finding 6: WRK-01 — Worker Secrets Updated Before Script Deployment
 - **Severity:** High (Operational Regression)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/providers/cloudflare-workers.provider.ts`](../packages/deployment-providers/src/providers/cloudflare-workers.provider.ts#L88-L105)
+- **Location:** [`packages/deployment-providers/src/providers/cloudflare-workers.provider.ts`](../../packages/deployment-providers/src/providers/cloudflare-workers.provider.ts#L88-L105)
 - **Evidence:**
   Worker secrets are mutated via Cloudflare's `PUT /secrets` API *prior* to uploading and deploying the Worker script version. If script deployment subsequently fails, the live production Worker is left running with new, mismatched secrets.
 - **Architectural Impact:** Causes production outages during failed deployments without automatic rollback.
@@ -162,7 +162,7 @@ flowchart TD
 #### Finding 7: PGS-01 — Pages Functions Compilation Missing
 - **Severity:** High (Functional Defect)
 - **Status:** **Confirmed**
-- **Location:** [`packages/deployment-providers/src/providers/cloudflare-pages.provider.ts`](../packages/deployment-providers/src/providers/cloudflare-pages.provider.ts)
+- **Location:** [`packages/deployment-providers/src/providers/cloudflare-pages.provider.ts`](../../packages/deployment-providers/src/providers/cloudflare-pages.provider.ts)
 - **Evidence:**
   Cloudflare Pages full-stack projects require compiling `/functions` into a single `_worker.js` bundle using Wrangler. The provider only packages static assets from `buildOutputDirectory`, ignoring server-side functions.
 - **Architectural Impact:** Dynamic full-stack Pages apps (Next.js/Remix/Astro static exports with functions) lose all backend endpoints.
@@ -170,7 +170,7 @@ flowchart TD
 #### Finding 8: ENG-01 — Health Checks Executed Before Provider Stabilization
 - **Severity:** High (State Machine Flaw)
 - **Status:** **Confirmed**
-- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../packages/application/src/orchestrator/deployment-execution-engine.ts#L72-L96)
+- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../../packages/application/src/orchestrator/deployment-execution-engine.ts#L72-L96)
 - **Evidence:**
   The engine transitions directly from `Deploying` to `HealthChecking` immediately after `provider.deploy()` returns. It never polls `provider.getStatus()` to confirm that ECS tasks are running or Cloudflare CDN edges have propagated the new version.
 - **Architectural Impact:** Health checks run against the previous deployment version or fail with 502 Bad Gateway due to edge propagation delay.
@@ -178,7 +178,7 @@ flowchart TD
 #### Finding 9: ENG-03 — No Deployment Reconciliation on Worker Crashes
 - **Severity:** High (Reliability Defect)
 - **Status:** **Confirmed**
-- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../packages/application/src/orchestrator/deployment-execution-engine.ts)
+- **Location:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../../packages/application/src/orchestrator/deployment-execution-engine.ts)
 - **Evidence:**
   The engine runs entirely in memory without recording execution heartbeats, lease timeouts, or worker locks in PostgreSQL. If a background worker terminates during deployment, the deployment record remains stuck in `Deploying` indefinitely.
 - **Architectural Impact:** Blocked deployment pipelines requiring manual database intervention.
@@ -203,7 +203,7 @@ The prior document `CLOUDFLARE_IMPLEMENTATION_REPORT.md` stated:
 Every single test in `packages/deployment-providers/tests/` uses mock objects (`mockFetch`, `mockApiClient`, `mockDb`). Zero network requests were made to Cloudflare API endpoints. Test coverage validated only that mock methods were invoked with expected parameters.
 
 ### 4.2 Database Constraints and Integrity
-Inspection of [`packages/database/src/migrations/0001_initial_schema.sql`](../packages/database/src/migrations/0001_initial_schema.sql):
+Inspection of [`packages/database/src/migrations/0001_initial_schema.sql`](../../packages/database/src/migrations/0001_initial_schema.sql):
 - The `deployments` table enforces `check_container_runtime_fields` which permits `null` CPU/memory for non-container providers.
 - The `integration_credentials` table lacks a `wrapped_dek` column, `kek_id`, and `algorithm_version` column.
 - Database uses PostgreSQL `timestamptz` everywhere.
@@ -229,6 +229,6 @@ OpsPilot has a well-conceived domain vision and clear operational boundaries, bu
 
 All 10 findings are **Confirmed**. Under no circumstances should feature implementation proceed until:
 1. Canonical repository boundaries are codified (`docs/architecture/PROJECT_BOUNDARIES.md`).
-2. Architecture decisions are locked (`docs/PROJECT_FOUNDATION_DECISIONS.md`).
-3. The 10 blockers are scheduled in the prioritized remediation plan (`docs/PROJECT_FOUNDATION_REMEDIATION_PLAN.md`).
+2. Architecture decisions are locked (`docs/reports/PROJECT_FOUNDATION_DECISIONS.md`).
+3. The 10 blockers are scheduled in the prioritized remediation plan (`docs/reports/PROJECT_FOUNDATION_REMEDIATION_PLAN.md`).
 4. Explicit project owner approval is obtained.

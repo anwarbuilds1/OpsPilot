@@ -20,7 +20,7 @@ OpsPilot follows the ADR process to document significant architectural shifts, f
 |---|---|---|---|
 | [**ADR-0001**](ADR-0001-modular-monolith-architecture.md) | Modular Monolith Architecture | Accepted | Monorepo Architecture |
 | [**ADR-0002**](ADR-0002-postgresql-as-primary-state-store.md) | PostgreSQL as Primary State Store | Accepted | Database & State |
-| [**ADR-0003**](ADR-0003-redis-and-bullmq-for-asynchronous-jobs.md) | Redis and BullMQ for Asynchronous Jobs | Accepted | Background Processing |
+| [**ADR-0003**](ADR-0003-redis-and-bullmq-for-asynchronous-jobs.md) | Redis and BullMQ for Asynchronous Jobs | Superseded (Decision 7: PostgreSQL-backed queue — selected architecture, implementation pending) | Background Processing |
 | [**ADR-0004**](ADR-0004-deployment-provider-abstraction.md) | Deployment Provider Abstraction | Accepted | Provider Architecture |
 | [**ADR-0005**](ADR-0005-isolated-runners-for-untrusted-builds.md) | Isolated Runners for Untrusted Builds | Accepted | Build Security |
 | [**ADR-0006**](ADR-0006-aws-ecs-fargate-deployment.md) | AWS ECS Fargate Deployment Adapter | Accepted | Cloud Providers |
@@ -30,7 +30,7 @@ OpsPilot follows the ADR process to document significant architectural shifts, f
 | [**ADR-0010**](ADR-0010-provider-independent-ai-gateway.md) | Provider-Independent AI Gateway | Accepted | AI Architecture |
 | [**ADR-0011**](ADR-0011-read-only-ai-investigation-agent.md) | Read-Only AI Investigation Agent | Accepted | AI Safety |
 | [**ADR-0012**](ADR-0012-human-approval-gate-for-production-remediation.md) | Human Approval Gate for Production Remediation | Accepted | Operations & Safety |
-| [**ADR-0013**](ADR-0013-open-source-license-selection.md) | Open-Source License Selection (Apache-2.0 Recommended) | Pending Owner | Governance & Licensing |
+| [**ADR-0013**](ADR-0013-open-source-license-selection.md) | Open-Source License Selection (Apache-2.0) | Accepted | Governance & Licensing |
 | [**ADR-0014**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0014-separate-cloudflare-workers-and-cloudflare-pages-providers) | Separate Cloudflare Workers and Pages Providers | Accepted | Cloudflare Integration |
 | [**ADR-0015**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0015-direct-upload-strategy-for-cloudflare-pages) | Direct Upload Strategy for Cloudflare Pages | Accepted | Cloudflare Integration |
 | [**ADR-0016**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0016-nodejs-isolated-build-runner-for-cloudflare-targets) | Node.js Isolated Build Runner for Cloudflare Targets | Accepted | Build Security |

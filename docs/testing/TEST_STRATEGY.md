@@ -1,7 +1,7 @@
 # OpsPilot — Test Strategy & Test Architecture
 
-> **Audience:** Contributors, Platform Engineers, QA Engineers  
-> **Status:** Authoritative Testing Specification  
+> **Audience:** Contributors, Platform Engineers, QA Engineers
+> **Status:** Authoritative Testing Specification
 > **Date:** November 2026
 
 ---
@@ -13,7 +13,7 @@ OpsPilot standardizes on **Vitest** as the test runner across all monorepo packa
 ```mermaid
 flowchart TD
     ROOT["Vitest Test Runner (vitest.workspace.ts)"]
-    
+
     subgraph Unit Suites ["Fast In-Memory Unit Suites (< 5s)"]
         U1["packages/domain/tests (State machines, entities)"]
         U2["packages/contracts/tests (Zod schemas)"]
@@ -21,8 +21,7 @@ flowchart TD
     end
 
     subgraph Integration Suites ["Database & Queue Integration Suites (< 20s)"]
-        I1["packages/database/tests (PostgreSQL queries, tenant isolation)"]
-        I2["packages/job-queue/tests (BullMQ dispatch, retries)"]
+        I1["packages/database/tests (PostgreSQL queries, tenant isolation, schema lifecycle)"]
     end
 
     subgraph Contract Suites ["Provider Contract Suites (< 10s)"]
@@ -74,6 +73,12 @@ The security test suite in `packages/security/tests/envelope-encryption.spec.ts`
 3. **Tenant Boundary (AAD):** Attempting to decrypt record A using organization B's context must fail cryptographically.
 4. **Fail-Closed:** Initializing the service without `OPSPILOT_MASTER_KEY` must throw `MissingMasterKeyException`.
 
+### 2.5 AI Diagnostic Evaluation Testing
+The AI Investigation Agent is benchmarked against the 15 standardized failure scenarios defined in the [Incident Simulator](../ai/INCIDENT_SIMULATOR.md) and [AI Evaluation Framework](../ai/AI_EVALUATION.md) to guarantee:
+- Deterministic tool selection strictly from the approved read-only tool catalog.
+- Zero credential leakage in synthesized investigation contexts or audit reports.
+- Elimination of hallucinated system state or unverified root causes.
+
 ---
 
 ## 3. Flaky Test Prevention & Determinism
@@ -84,3 +89,26 @@ The security test suite in `packages/security/tests/envelope-encryption.spec.ts`
    ```
 2. **Clock Determinism:** For time-sensitive tests (e.g. lease expiration, token expiration), use Vitest fake timers (`vi.useFakeTimers()`).
 3. **No Shared Global State:** Singletons with mutable in-memory state are forbidden in test harnesses.
+
+---
+
+## 4. Automated CI/CD Quality Pipeline Sequence
+
+The sequence below outlines the quality gates executed on every Pull Request before code can be merged into `main`:
+
+```mermaid
+flowchart LR
+    PR[Pull Request Opened] --> Lint["1. ESLint & Prettier Check"]
+    PR --> Typecheck["2. TypeScript Typecheck (tsc -b)"]
+
+    Lint --> UnitTests["3. Unit Test Suites (Vitest In-Memory)"]
+    Typecheck --> UnitTests
+
+    UnitTests --> IntTests["4. PostgreSQL Schema & Isolation Tests"]
+    IntTests --> SecurityScan["5. Gitleaks & Secret Redaction Tests"]
+
+    SecurityScan --> BuildTest["6. Container Build Runner Checks"]
+    BuildTest --> ReadyToMerge{"All Gates Passed?"}
+    ReadyToMerge -->|Yes| Approved["Ready for Maintainer Review"]
+    ReadyToMerge -->|No| Blocked["Block Merge"]
+```

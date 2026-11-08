@@ -1,14 +1,22 @@
-# Testing Strategy & Quality Assurance Framework
+# Testing Strategy & Quality Assurance Framework (Deprecated Reference)
 
-> **Test Runner:** Jest / Vitest  
-> **Container Testing:** Testcontainers (PostgreSQL & Redis)  
-> **Status:** Mandatory Quality Specification
-
-Because OpsPilot automates infrastructure deployments and coordinates incident responses, a comprehensive, multi-tiered testing strategy is essential to prevent outages and tenant security breaches.
+> [!NOTE]
+> **Canonical Document Locations:**
+> - **Testing Strategy (Philosophy, Harness Architecture & Execution):** [`docs/testing/TEST_STRATEGY.md`](../testing/TEST_STRATEGY.md)
+> - **Testing Standards (Enforceable Gates, Mocks & CI Tiers):** [`docs/engineering/TESTING_STANDARDS.md`](TESTING_STANDARDS.md)
+>
+> This engineering document has been superseded. Testing responsibilities are divided into:
+> 1. **Testing Strategy** ([`docs/testing/TEST_STRATEGY.md`](../testing/TEST_STRATEGY.md)): Authoritative guide for Vitest workspace architecture, test execution commands, database transaction isolation, and flaky-test prevention.
+> 2. **Testing Standards** ([`docs/engineering/TESTING_STANDARDS.md`](TESTING_STANDARDS.md)): Mandatory quality gates, branch coverage benchmarks, tenant isolation assertions, and anti-deception rules.
 
 ---
 
-## 1. Testing Pyramid Overview
+## Historical Context & Initial QA Framework (Archived)
+
+> [!WARNING]
+> **Historical Artifact Notice:** The section below represents early project planning documentation. Note that OpsPilot standardizes on **Vitest** across all workspaces (not Jest), and executes integration tests against PostgreSQL 18 with schema/transaction isolation rather than Testcontainers.
+
+### 1. Initial Testing Pyramid Overview
 
 ```mermaid
 flowchart TD
@@ -23,48 +31,5 @@ flowchart TD
     class E2E,Integration,Unit py;
 ```
 
----
-
-## 2. CI/CD Testing Pipeline
-
-The following sequence details the automated quality gates executed on every Pull Request before code can be merged into `main`:
-
-```mermaid
-flowchart LR
-    PR[Pull Request Opened] --> Lint[ESLint & Prettier Check]
-    PR --> Typecheck[TypeScript Typecheck: tsc --noEmit]
-    
-    Lint --> UnitTests[Run Unit Tests]
-    Typecheck --> UnitTests
-    
-    UnitTests --> IntTests[Run Integration & Tenant Isolation Tests]
-    IntTests --> SecurityScan[Secret Scanning & SAST Scan]
-    
-    SecurityScan --> BuildTest[Test Container Image Builds]
-    BuildTest --> ReadyToMerge{All Passed?}
-    ReadyToMerge -->|Yes| Approved[Ready for Maintainer Review]
-    ReadyToMerge -->|No| Blocked[Block Merge]
-
-    classDef pass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
-    classDef fail fill:#ffebee,stroke:#d32f2f,stroke-width:2px;
-    class Approved pass;
-    class Blocked fail;
-```
-
----
-
-## 3. Test Categories & Implementation Standards
-
-### 3.1 Unit Testing
-- **Target:** Domain entities, deployment state machine transitions, secret scrubbing regex, Zod validation schemas.
-- **Rules:** Must execute in milliseconds without external network or database dependencies. Use in-memory mocks for repositories and external adapters.
-
-### 3.2 Multi-Tenant Isolation Testing (Mandatory)
-Every API endpoint and service method must have an integration test verifying that a user from `Organization A` cannot read or mutate entities belonging to `Organization B`. Tests must verify that attempting cross-tenant access returns HTTP 403 or 404.
-
-### 3.3 Provider Adapter Integration Testing
-- **AWS ECS Provider:** Tested against mock AWS STS and ECS API responses using AWS SDK v3 mocks or LocalStack.
-- **VPS Docker Provider:** Tested using an ephemeral local Docker container running an OpenSSH server (`docker/ssh-runner.Dockerfile`) to verify command execution, compose backups, and rollback commands over an authentic SSH tunnel.
-
-### 3.4 AI Evaluation Testing
-The AI Investigation Agent is tested against the 15 standardized scenarios defined in the [Incident Simulator](../ai/INCIDENT_SIMULATOR.md) to ensure diagnosis accuracy, tool selection correctness, and absence of hallucinated facts.
+### 2. Historical PR Quality Gates
+The initial pipeline executed linting, typecheck, unit tests, tenant isolation integration tests, secret scanning, and container build checks before maintainer review. Current enforceable gates are codified in [`docs/engineering/TESTING_STANDARDS.md`](TESTING_STANDARDS.md).

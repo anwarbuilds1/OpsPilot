@@ -1,11 +1,17 @@
 # ADR-0003: Redis and BullMQ for Asynchronous Jobs
 
-- **Status:** Accepted
+- **Status:** Superseded by Decision 7 (PostgreSQL-backed queue — selected architecture, implementation pending; BullMQ/Redis retained as future high-throughput alternative)
+- **Superseded Date:** 2026-11-07
+- **Superseded By:** [`docs/reports/PROJECT_FOUNDATION_DECISIONS.md`](../reports/PROJECT_FOUNDATION_DECISIONS.md) (Decision 7) and [`docs/reports/PROJECT_FOUNDATION_RECONCILIATION.md`](../reports/PROJECT_FOUNDATION_RECONCILIATION.md) (Section 7)
 - **Date:** 2026-11-01
 - **Author:** Principal Software Architect
 - **Deciders:** OpsPilot Core Team
 
 ---
+
+> [!NOTE]
+> **Supersession Notice (November 2026):**
+> This decision record was superseded during Project Foundation Reconciliation (Decision 7). OpsPilot v0.1.0 adopts a **PostgreSQL-backed queue — selected architecture, implementation pending** (`pg-boss` or custom `FOR UPDATE SKIP LOCKED` worker) to eliminate Redis operational overhead for small teams and enable single-transaction outbox persistence. BullMQ and Redis are preserved as a future scale tier if queue throughput exceeds 5,000 jobs/minute.
 
 ## Context
 OpsPilot executes asynchronous, long-running operations including Docker builds, image pushes, AWS ECS stabilization polling, health check probing, and multi-turn AI investigations. These tasks cannot run synchronously in HTTP request threads.

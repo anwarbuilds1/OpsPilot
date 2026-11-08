@@ -30,7 +30,7 @@ Your role when operating in this codebase is that of a Senior Systems Engineer a
 ### 2.1 TypeScript & Node.js
 - **Strict Mode:** Always maintain `"strict": true` in `tsconfig.json`. No usage of `any`; use `unknown` with runtime validation (Zod) where types are dynamic.
 - **Explicit Return Types:** All public functions, NestJS service methods, and controller endpoints must declare explicit return types.
-- **Runtime Validation:** All inputs across REST endpoints, webhook payloads, and BullMQ job data must be validated with Zod schemas or NestJS `class-validator` DTOs.
+- **Runtime Validation:** All inputs across REST endpoints, webhook payloads, and background queue job data must be validated with Zod schemas or NestJS `class-validator` DTOs.
 - **Error Handling:** Use custom domain exception classes that map to the standard error contract (see [API Error Contract](docs/engineering/API_ERROR_CONTRACT.md)). Never leak internal stack traces to client responses.
 
 ### 2.2 Database Operations
@@ -49,10 +49,11 @@ Your role when operating in this codebase is that of a Senior Systems Engineer a
 - Wrap multi-table state updates in explicit database transactions.
 - Use UTC timestamps exclusively (`timestamptz`).
 
-### 2.3 Background Jobs (BullMQ)
+### 2.3 Background Jobs (PostgreSQL-Backed Queue — Implementation Pending)
 - Job handlers must catch unrecoverable errors and log structured diagnostics.
 - Always configure job backoff strategies (`exponential`) and explicit attempt limits.
 - Store job status and execution progress in PostgreSQL (`deployments`, `agent_runs`) so state survives worker restarts.
+- Note: PostgreSQL-backed queue is the selected initial architecture (Decision 7); BullMQ and Redis are preserved as a future high-throughput scale tier.
 
 ---
 
@@ -107,8 +108,8 @@ When generating or placing files, adhere strictly to this project layout:
 OpsPilot/
 ├── apps/
 │   ├── api/                   # NestJS Core Application API
-│   ├── dashboard/             # Next.js 14+ App Router Frontend
-│   └── workers/               # BullMQ Background Workers
+│   ├── dashboard/             # Next.js 14+ / Vite Frontend
+│   └── workers/               # Background Workers (PostgreSQL Queue)
 │       ├── deployment-worker/ # Deployment orchestrator
 │       ├── incident-worker/   # Incident detection & correlation
 │       ├── ai-worker/         # AI Investigation Agent runner

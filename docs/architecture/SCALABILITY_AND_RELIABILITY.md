@@ -11,7 +11,7 @@ OpsPilot is engineered to scale gracefully from single-server development instan
 
 - **Control Plane Availability Target:** 99.5% uptime for the REST API and web dashboard.
 - **Data Durability:** Zero loss of completed deployment records or audit logs. PostgreSQL Write-Ahead Logging (WAL) and automated snapshots ensure point-in-time recovery.
-- **Job Survivability:** Background jobs in BullMQ survive worker restarts. If a worker process terminates abruptly during an active deployment or AI investigation, a heartbeat timeout (120s) triggers automatic reassignment to a healthy worker.
+- **Job Survivability:** Background jobs survive worker restarts (PostgreSQL-backed queue — selected architecture, implementation pending; worker leases and heartbeat scheduled for Phase 2). If a worker process terminates abruptly during an active deployment or AI investigation, worker lease expiration triggers reassignment to a healthy worker.
 - **Fail-Open Application Runtimes:** OpsPilot is purely a control plane. If OpsPilot experiences an outage, customer applications deployed on AWS ECS or VPS instances continue running without degradation.
 
 ---
@@ -30,22 +30,22 @@ flowchart TD
     API2 --> PG
     APIn --> PG
 
-    API1 --> RedisCluster[(Redis Cluster / BullMQ)]
-    API2 --> RedisCluster
-    APIn --> RedisCluster
+    API1 --> Queue[(PostgreSQL-Backed Queue\nSelected Architecture - Implementation Pending)]
+    API2 --> Queue
+    APIn --> Queue
 
-    RedisCluster --> Worker1[Deployment Worker 1]
-    RedisCluster --> Worker2[Deployment Worker 2]
-    RedisCluster --> WorkerAI[AI Investigation Worker]
-    RedisCluster --> WorkerTel[Telemetry Worker]
+    Queue --> Worker1[Deployment Worker 1]
+    Queue --> Worker2[Deployment Worker 2]
+    Queue --> WorkerAI[AI Investigation Worker]
+    Queue --> WorkerTel[Telemetry Worker]
 
     Worker1 --> RunnerPool[Ephemeral Runner Pool]
     Worker2 --> RunnerPool
 ```
 
 ### Scaling Characteristics:
-- **Stateless API Tier:** The NestJS API nodes do not hold local session state (sessions are JWT/Redis backed). Nodes scale horizontally behind standard ALB/NLB.
-- **Worker Concurrency & Autoscaling:** Workers scale independently based on BullMQ queue depth (`deployment-queue`, `ai-investigation-queue`).
+- **Stateless API Tier:** The NestJS API nodes do not hold local session state (sessions are JWT backed). Nodes scale horizontally behind standard ALB/NLB.
+- **Worker Concurrency & Autoscaling:** Workers scale independently based on queue depth (PostgreSQL-backed queue — selected architecture, implementation pending).
 - **Database Connection Pooling:** Managed through PgBouncer or NestJS ORM connection pooling to prevent PostgreSQL connection saturation under high concurrency.
 
 ---
@@ -54,8 +54,8 @@ flowchart TD
 
 | Failure Scenario | Impact | System Reaction & Recovery |
 |---|---|---|
-| **Redis Outage** | Job processing paused; session verification falls back. | API returns HTTP 503 for deployment triggers; existing deployments in AWS/VPS continue running; BullMQ retries connection with exponential backoff. |
-| **Worker Process Crash** | Active job stalled. | BullMQ stalled job detector identifies missing heartbeat after 120s; re-enqueues job or transitions deployment to `Failed` with diagnostic message. |
+| **Queue Processing Interruption** | Job processing paused. | Existing deployments in AWS/VPS continue running; PostgreSQL state remains durable; workers resume processing upon reconnect. |
+| **Worker Process Crash** | Active job stalled. | Stranded-job reaper identifies expired worker lease; re-enqueues job or transitions deployment to `Failed` with diagnostic message (Phase 2). |
 | **CloudWatch API Rate Limit (AWS 429)** | Metrics collection delayed. | Telemetry worker applies jittered exponential backoff; caches last known metrics. |
 | **LLM Provider Outage** | AI investigations cannot complete. | AI Gateway catches provider timeout; marks investigation as `Inconclusive`; notifies user that manual investigation is required. |
 | **PostgreSQL Transient Disconnect** | API read/write errors. | Built-in connection pool retry logic; health check endpoint `/health` flags degraded status to load balancer. |

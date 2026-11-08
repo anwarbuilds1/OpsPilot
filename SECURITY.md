@@ -54,7 +54,7 @@ For detailed specifications on how OpsPilot enforces zero-trust boundaries:
 - **Threat Model & STRIDE Analysis:** [`docs/security/THREAT_MODEL.md`](docs/security/THREAT_MODEL.md)
 - **Credential Management & Envelope Encryption:** [`docs/security/CREDENTIAL_MANAGEMENT.md`](docs/security/CREDENTIAL_MANAGEMENT.md)
 - **Control Plane vs. Execution Plane:** [`docs/architecture/CONTROL_PLANE_AND_EXECUTION_PLANE.md`](docs/architecture/CONTROL_PLANE_AND_EXECUTION_PLANE.md)
-- **Current Security Audit Findings:** [`docs/PROJECT_FOUNDATION_AUDIT.md`](docs/PROJECT_FOUNDATION_AUDIT.md)
+- **Current Security Audit Findings:** [`docs/reports/PROJECT_FOUNDATION_AUDIT.md`](docs/reports/PROJECT_FOUNDATION_AUDIT.md)
 
 ---
 

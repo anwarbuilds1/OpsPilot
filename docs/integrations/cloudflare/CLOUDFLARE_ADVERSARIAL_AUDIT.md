@@ -407,7 +407,7 @@ The architecture documented in `CLOUDFLARE_ARCHITECTURE_DECISIONS.md` (ADR-0014 
 
 ### Finding `ENG-01`: Missing Stabilization Polling Prior to Health Checking
 - **Severity:** **HIGH**
-- **File & Lines:** [`packages/deployment-providers/src/engine/deployment-execution-engine.ts#L135-L153`](file:///home/anwar/Workspace/personal/opspilot/packages/deployment-providers/src/engine/deployment-execution-engine.ts#L135-L153)
+- **File & Lines:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../../../packages/application/src/orchestrator/deployment-execution-engine.ts)
 - **Status:** **CONFIRMED**
 - **Evidence:**
   ```typescript
@@ -430,7 +430,7 @@ The architecture documented in `CLOUDFLARE_ARCHITECTURE_DECISIONS.md` (ADR-0014 
 
 ### Finding `ENG-02`: Unverified Health State Following Automated Rollback
 - **Severity:** **MEDIUM**
-- **File & Lines:** [`packages/deployment-providers/src/engine/deployment-execution-engine.ts#L190-L215`](file:///home/anwar/Workspace/personal/opspilot/packages/deployment-providers/src/engine/deployment-execution-engine.ts#L190-L215)
+- **File & Lines:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../../../packages/application/src/orchestrator/deployment-execution-engine.ts)
 - **Status:** **CONFIRMED**
 - **Evidence:**
   When `provider.rollback()` succeeds, the engine immediately transitions to `DeploymentStatuses.ROLLED_BACK` without running a health probe on the rolled-back target.
@@ -443,7 +443,7 @@ The architecture documented in `CLOUDFLARE_ARCHITECTURE_DECISIONS.md` (ADR-0014 
 
 ### Finding `ENG-03`: Process Crash Vulnerability and Missing Deployment Reconciliation
 - **Severity:** **HIGH**
-- **File & Lines:** [`packages/deployment-providers/src/engine/deployment-execution-engine.ts#L100-L260`](file:///home/anwar/Workspace/personal/opspilot/packages/deployment-providers/src/engine/deployment-execution-engine.ts#L100-L260)
+- **File & Lines:** [`packages/application/src/orchestrator/deployment-execution-engine.ts`](../../../packages/application/src/orchestrator/deployment-execution-engine.ts)
 - **Status:** **CONFIRMED**
 - **Evidence:**
   The engine is an in-memory procedural script. If the worker process restarts while a deployment is in `Deploying`, the database row remains stuck in `Deploying` forever.

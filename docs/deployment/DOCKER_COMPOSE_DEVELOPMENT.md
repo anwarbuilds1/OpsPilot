@@ -1,5 +1,8 @@
 # Local Development with Docker Compose
 
+> **Document Type:** Deployment Topology & Local Container Infrastructure
+> **Workstation Setup Guide:** For host machine prerequisites (Node.js, npm, environment variables, and local test execution), see [`docs/development/LOCAL_DEVELOPMENT.md`](../development/LOCAL_DEVELOPMENT.md).
+
 This guide details how OpsPilot runs in a local development environment, including container architecture, service ports, and volume persistence.
 
 ---
@@ -57,22 +60,23 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: opspilot-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+  # Optional / Future Scale: Superseded by Decision 7 for v0.1.0 (PostgreSQL-backed queue used initially)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: opspilot-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
 
 volumes:
   postgres_data:
-  redis_data:
+  # redis_data:
 ```
 
 ---

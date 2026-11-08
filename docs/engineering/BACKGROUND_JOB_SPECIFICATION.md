@@ -1,8 +1,12 @@
 # Background Job & Queue Specifications
 
-> **Engine:** BullMQ 5.x on Redis 7  
-> **Status:** Mandatory Operational Specification  
+> **Engine:** PostgreSQL-backed queue — selected architecture, implementation pending (BullMQ 5.x on Redis 7 preserved as high-throughput alternative)
+> **Status:** Superseded by Decision 7 (Phase 2 Implementation Pending)
 > **Pattern:** Transactional Enqueueing & Idempotent Consumer Workers
+
+> [!NOTE]
+> **Supersession Notice (November 2026):**
+> Per Project Foundation Decision 7 and ADR-0003 supersession, OpsPilot v0.1.0 adopts a **PostgreSQL-backed queue — selected architecture, implementation pending** to consolidate state into PostgreSQL, eliminate Redis operational overhead for small teams, and enable atomic transactional outbox persistence. BullMQ and Redis are preserved as a future scale tier if queue throughput exceeds 5,000 jobs/minute. The specifications below describe the future high-throughput scale tier.
 
 All long-running, asynchronous, and scheduled workflows in OpsPilot are processed through dedicated BullMQ queues backed by Redis.
 

@@ -15,7 +15,7 @@ Every deployment—regardless of target provider—progresses through an immutab
 ```mermaid
 stateDiagram-v2
     [*] --> Queued: User trigger or Webhook
-    Queued --> Preparing: Worker claims BullMQ job
+    Queued --> Preparing: Worker claims job from queue
     Preparing --> Building: Workspace initialized
     Building --> Publishing: Image compiled successfully
     Publishing --> Deploying: Image pushed to registry

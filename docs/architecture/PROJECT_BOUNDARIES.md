@@ -41,7 +41,7 @@ flowchart TD
         DB_ADAPT["Database Repositories (packages/database)"]
         SEC_ADAPT["Envelope Encryption Vault (packages/security)"]
         PROV_ADAPT["Cloud Provider Adapters (packages/deployment-providers: AWS, VPS, Cloudflare)"]
-        QUEUE_ADAPT["Job Queue Engine (BullMQ / PG Queue Adapter)"]
+        QUEUE_ADAPT["Job Queue Engine (PostgreSQL-Backed Queue Adapter — Implementation Pending)"]
         OBS_ADAPT["Telemetry Exporter (packages/observability)"]
     end
 
@@ -129,7 +129,7 @@ flowchart TD
 
 ### F. Execution & Worker Boundary (`apps/worker`, `docker/runners`)
 - **Responsibilities:** 
-  1. **Worker Executable (`apps/worker`):** An application assembler/composer executable that initializes the infrastructure queue consumer engine (BullMQ or PostgreSQL-backed queue) and routes dequeued jobs to application use cases (`DeploymentExecutionEngine`).
+  1. **Worker Executable (`apps/worker`):** An application assembler/composer executable (Planned — Phase 2) that initializes the infrastructure queue consumer engine (PostgreSQL-backed queue — selected architecture, implementation pending) and routes dequeued jobs to application use cases (`DeploymentExecutionEngine`).
   2. **Host-side Runner Orchestrator:** A trusted host-side service controlling the Docker daemon to spawn, monitor, and clean up isolated build containers.
   3. **Sandboxed Build Container (`docker/runners`):** Ephemeral leaf container executing untrusted repository code with non-root UID 10001, `--read-only` root filesystem, network egress restrictions, and **zero access to `/var/run/docker.sock`**.
 - **Strict Invariants:**
@@ -137,7 +137,7 @@ flowchart TD
   2. The worker executable does not implement the queue port itself; it composes the queue adapter with application use cases.
 
 ### G. Security Boundary (`packages/security`)
-- **Responsibilities:** NIST SP 800-57 compliant envelope encryption, Master Key / KEK lifecycle, secure random DEK generation, secret redaction, and deterministic RBAC. Implements `ISecretVaultPort`.
+- **Responsibilities:** Secret redaction and credential encryption (target architecture: NIST SP 800-57 multi-tier envelope encryption; Phase 0 implementation: static tenant HKDF derivation service retained under scope exception, refactoring scheduled for Phase 2). Implements `ISecretVaultPort` and `ISecretRedactor`.
 - **Strict Invariants:**
   1. Key material is cleared from memory buffers after cryptographic operations.
   2. Encrypted payloads must include tenant and integration IDs as Additional Authenticated Data (AAD) to prevent cross-tenant decryption.
@@ -172,7 +172,7 @@ sequenceDiagram
     participant UC as packages/application (Use Case)
     participant SEC as packages/security (Vault)
     participant DB as packages/database (PostgreSQL)
-    participant Q as packages/job-queue (BullMQ)
+    participant Q as PostgreSQL-Backed Queue (Implementation Pending)
     participant W as apps/worker (Execution Plane)
     participant RUN as docker/runners (Build Sandbox)
     participant PROV as packages/deployment-providers (Adapter)

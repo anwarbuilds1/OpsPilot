@@ -59,7 +59,7 @@ flowchart TB
 | Dimension | Control Plane (`apps/api`, `packages/database`, `packages/security`) | Execution Plane (`apps/worker`, `docker/runners`) |
 |---|---|---|
 | **Trust Classification** | **High Trust (Trusted Authority)** | **Zero Trust (Untrusted Execution)** |
-| **Identity & Access** | Full access to PostgreSQL, Master Key (KEK), and Redis. | No access to PostgreSQL or Master KEK. Isolated DB user if needed. |
+| **Identity & Access** | Full access to PostgreSQL and Master Key (KEK); PostgreSQL-backed queue — selected architecture, implementation pending. | No access to PostgreSQL or Master KEK. Isolated DB user if needed. |
 | **Runtime Environment** | Fixed, trusted Node.js NestJS runtime on private subnet. | Ephemeral container sandbox (`docker/runners`) with dropped capabilities. |
 | **Credentials Held** | Master KEK, PostgreSQL root credentials, JWT signing keys. | Ephemeral, single-use, scoped provider tokens decrypted just-in-time. |
 | **Network Egress** | Internal private network only; database port 5432. | Restricted egress: AWS metadata endpoint (`169.254.169.254`) blocked. |
@@ -134,7 +134,11 @@ A background reconciliation job runs in the Control Plane every 60 seconds:
 
 ## 5. Host-Side Runner Orchestrator & Sandbox Security Controls
 
-Build processes (such as `npm run build`, `vite build`, or `wrangler deploy`) execute inside ephemeral container sandboxes managed by a **trusted host-side Runner Orchestrator**:
+> [!NOTE]
+> **Planned Architecture Specification:**
+> The host-side runner orchestrator and container controls described below represent the **target Phase 1 execution architecture**. In Phase 0, `HardenedBuildRunner` validates configuration parameters, but no live host-side orchestrator exists to launch containers with these flags.
+
+Build processes (such as `npm run build`, `vite build`, or `wrangler deploy`) are designed to execute inside ephemeral container sandboxes managed by a **trusted host-side Runner Orchestrator**:
 
 ### 5.1 Orchestrator vs. Container Boundary
 1. **Trusted Host-Side Orchestrator:** The worker process on the host controls the Docker Engine via the host's `/var/run/docker.sock`. It creates, monitors, limits, and terminates build containers.

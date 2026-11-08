@@ -11,8 +11,8 @@
 OpsPilot adopts the **Modular Monolith** architectural style paired with asynchronous worker processes and isolated execution runners. This approach provides significant engineering advantages for an early-stage, high-complexity platform:
 1. **Single Deployable Unit for Core API:** Fast developer feedback loops, simplified shared domain models, straightforward transaction boundaries, and low operational overhead compared to premature microservices.
 2. **Strict Module Encapsulation:** Clear boundaries inside the monolith (see [Module Boundaries](MODULE_BOUNDARIES.md)) to prevent spaghetti code and allow individual modules to be extracted into independent microservices later if scaling demands dictate.
-3. **Asynchronous Execution for Heavy Operations:** Long-running Docker builds, cloud deployments, and multi-step AI investigations are offloaded to BullMQ background workers and isolated container runners, preventing API thread-pool starvation.
-4. **PostgreSQL as the Durable Source of Truth:** All business state, deployment records, incident histories, and audit logs reside durably in PostgreSQL. Redis is reserved for transient queues, ephemeral caches, and distributed locks.
+3. **Asynchronous Execution for Heavy Operations:** Long-running Docker builds, cloud deployments, and multi-step AI investigations are offloaded to asynchronous background workers and isolated container runners (PostgreSQL-backed queue — selected architecture, implementation pending), preventing API thread-pool starvation.
+4. **PostgreSQL as the Durable Source of Truth:** All business state, deployment records, incident histories, audit logs, and queue entries reside durably in PostgreSQL. Redis is retained as a future high-throughput scale tier if queue throughput exceeds 5,000 jobs/minute.
 5. **Zero Infrastructure Access for AI:** The AI model is treated as an untrusted reasoning engine. It interacts solely through deterministic, read-only tools mediated by application authorization logic.
 
 ---
@@ -84,14 +84,14 @@ flowchart TD
 
     subgraph DataStorage [Data & Messaging Tier]
         API -->|Relational Queries & Transactions| PG[(PostgreSQL 16 Database<br/>State, Tenants, Audit, Logs)]
-        API -->|Enqueue Jobs & Token Cache| Redis[(Redis 7 & BullMQ<br/>Queues & Distributed Locks)]
+        API -->|Enqueue Jobs| Queue[(PostgreSQL-Backed Queue<br/>Selected Architecture - Implementation Pending)]
     end
 
-    subgraph WorkerTier [Asynchronous Worker Tier]
-        Redis -->|Pulls deployment-queue| DepWorker[Deployment Worker]
-        Redis -->|Pulls incident-queue| IncWorker[Incident Worker]
-        Redis -->|Pulls ai-investigation-queue| AIWorker[AI Investigation Worker]
-        Redis -->|Pulls telemetry-queue| TelWorker[Telemetry Worker]
+    subgraph WorkerTier [Asynchronous Worker Tier (Planned)]
+        Queue -->|Pulls deployment-queue| DepWorker[Deployment Worker]
+        Queue -->|Pulls incident-queue| IncWorker[Incident Worker]
+        Queue -->|Pulls ai-investigation-queue| AIWorker[AI Investigation Worker]
+        Queue -->|Pulls telemetry-queue| TelWorker[Telemetry Worker]
 
         DepWorker -->|Updates State| PG
         IncWorker -->|Updates State| PG
@@ -145,12 +145,13 @@ flowchart TD
   - Stores time-partitioned metrics snapshots and sanitized log records.
   - Maintains immutable, append-only audit trails of all user and system actions.
 
-### 4.5 Redis & BullMQ Queues
-- **Role:** Task distribution and ephemeral coordination.
+### 4.5 Asynchronous Queue Architecture
+- **Role:** Task distribution and asynchronous coordination.
+- **Specification:** **PostgreSQL-backed queue — selected architecture, implementation pending** (Project Foundation Decision 7).
 - **Responsibilities:**
   - Priority queues for deployments, incident checks, and AI investigations.
-  - Distributed concurrency locks (e.g., preventing concurrent deployments of the same service).
-  - Rate limiting buckets for API endpoints and LLM token usage.
+  - Consolidates state into PostgreSQL to eliminate Redis operational overhead for small teams and enable single-transaction outbox persistence.
+  - Preserves BullMQ and Redis as a future high-throughput scale tier if throughput exceeds 5,000 jobs/minute.
 
 ---
 
@@ -160,6 +161,6 @@ flowchart TD
 |---|---|---|---|
 | **Monolith vs Microservices** | Modular Monolith | Microservices (Auth, Deploy, AI as separate apps) | Faster development, unified deployment, zero network serialization latency between core modules. Avoids microservices overhead before reaching scale. |
 | **State Storage** | PostgreSQL Relational | MongoDB / Document DB | Strong schema enforcement, foreign key guarantees, and reliable ACID transactions are essential when managing production infrastructure state. |
-| **Job Orchestration** | Redis + BullMQ | Temporal / AWS SQS | BullMQ provides native TypeScript support, straightforward Redis deployment for local and cloud environments, and robust retry/exponential backoff semantics. |
+| **Job Orchestration** | PostgreSQL-Backed Queue | Redis + BullMQ / Temporal / AWS SQS | PostgreSQL-backed queue — selected architecture, implementation pending (Decision 7). Eliminates separate Redis container overhead for small teams and enables single-transaction outbox persistence. BullMQ/Redis retained as future scale tier. |
 | **Untrusted Builds** | Isolated Docker Runners | In-Process Child Process (`child_process.exec`) | User repositories contain arbitrary Dockerfiles and build scripts. Running builds in-process would expose the API to arbitrary remote code execution (RCE). |
 | **AI Investigation** | Single Bounded Agent | Multi-Agent Collaborative System | Multi-agent setups introduce unpredictable looping, high token costs, and difficulty in debugging. A single bounded agent with deterministic tools is predictable and cost-effective. |

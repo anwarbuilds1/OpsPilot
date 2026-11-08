@@ -6,9 +6,21 @@
 
 This document specifies the cryptographic controls, multi-tier envelope encryption architecture, key wrapping mechanisms, rotation policies, memory hygiene, and disaster recovery procedures implemented across OpsPilot.
 
+> [!WARNING]
+> **Implementation Status & Architecture Reality (November 2026):**
+> This specification documents the **target production cryptographic architecture**. The current codebase in [`packages/security/src/encryption/envelope-encryption.service.ts`](../../packages/security/src/encryption/envelope-encryption.service.ts) was committed under a Phase 0 scope exception and contains critical architectural discrepancies and security defects:
+> - **Current Implementation:** Uses a single master key with static tenant-derived HKDF keys (`hkdf(masterKey, 'opspilot-tenant-kdf-salt-v1', orgId, 32)`).
+> - **Missing: Random Per-Record DEKs (`SEC-01`):** No ephemeral Data Encryption Keys (DEKs) are generated per record (`crypto.randomBytes(32)` is not called per secret).
+> - **Missing: Wrapped DEK Persistence (`SEC-01`):** The `integration_credentials` database table contains no `wrapped_dek`, `wrap_iv`, or `wrap_tag` columns; wrapped DEKs are not persisted.
+> - **Missing: Cryptographic AAD Binding (`SEC-03`):** AES-256-GCM encryption and decryption omit `cipher.setAAD()` and `decipher.setAAD()`, leaving ciphertext vulnerable to cross-tenant transplant attacks.
+> - **Defective: Insecure Master-Key Fallback (`SEC-02`):** If `OPSPILOT_MASTER_KEY` is missing or invalid, the service silently falls back to a publicly known hardcoded development key (`opspilot-default-dev-master-key-2026`) instead of failing closed.
+> - **Defective: Key Rotation is a Cryptographic No-Op (`SEC-04`):** Calling `rotateKey()` decrypts and re-encrypts with the same derived key because key versions are hardcoded to 1 and master keys are static.
+>
+> **Important Distinction:** The interfaces and classes specified in this document—including `IKekProvider`, `LocalKekProvider`, `ManagedKmsKekProvider`, and `KeyWrapResult`—are **target architecture specifications** for Phase 2 hardening. They **do not exist** in the Phase 0 codebase.
+
 ---
 
-## 1. Cryptographic Architecture: Multi-Tier Envelope Encryption
+## 1. Cryptographic Architecture: Multi-Tier Envelope Encryption (Target Specification)
 
 OpsPilot explicitly rejects storing plaintext infrastructure credentials. When a tenant registers an SSH private key, connects an AWS IAM role, or provisions a scoped Cloudflare API token, secrets are protected via multi-tier envelope encryption.
 
@@ -25,9 +37,9 @@ flowchart TD
     DEK -->|Encrypts with AES-256-GCM + Payload AAD| PAYLOAD
 ```
 
-### 1.1 Key Encryption Key Provider Interface (`IKekProvider`)
+### 1.1 Key Encryption Key Provider Interface (`IKekProvider`) (Target Interface — Not Implemented in Phase 0)
 
-To support both cloud-native production deployments and fully offline, self-hosted installations without vendor lock-in, OpsPilot abstracts KEK operations behind the `IKekProvider` port:
+To support both cloud-native production deployments and fully offline, self-hosted installations without vendor lock-in, OpsPilot specifies KEK operations behind the planned `IKekProvider` port:
 
 ```typescript
 export interface KeyWrapResult {
@@ -44,15 +56,15 @@ export interface IKekProvider {
 }
 ```
 
-#### 1. Local Key Provider (`LocalKekProvider`):
+#### 1. Local Key Provider (`LocalKekProvider` — Target Specification):
 - **Target Environments:** Local development, automated CI pipelines, and zero-cloud self-hosted VPS deployments.
 - **Mechanism:** Operates directly within worker process memory using a 256-bit KEK loaded from `OPSPILOT_MASTER_KEY`.
-- **Implementation:**
+- **Target Specification:**
   - `wrapKey(dek, wrapAad)`: Generates a 12-byte random IV (`crypto.randomBytes(12)`), encrypts the DEK using AES-256-GCM under the local KEK with `wrapAad`, and extracts the 16-byte authentication tag.
   - `unwrapKey(...)`: Decrypts and authenticates the wrapped DEK using AES-256-GCM under the local KEK with `wrapAad`.
 - **Security Boundary:** The master KEK resides in process memory; access is bounded by host OS file and process permissions.
 
-#### 2. Managed KMS Provider (`ManagedKmsKekProvider`):
+#### 2. Managed KMS Provider (`ManagedKmsKekProvider` — Target Specification):
 - **Target Environments:** Production enterprise cloud deployments (AWS ECS, EKS).
 - **Mechanism:** The KEK **never leaves the cloud Hardware Security Module (HSM)**.
 - **Implementation:**

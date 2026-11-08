@@ -14,7 +14,7 @@ Before setting up OpsPilot locally, ensure your workstation meets the following 
 - **Node.js:** `v20.x` LTS (`v20.20.2` verified)
 - **NPM:** `v10.x` or later (`10.8.2` verified)
 - **PostgreSQL:** Version 16+ (PostgreSQL 18.6 verified via Unix socket `/var/run/postgresql:5432`)
-- **Redis:** Version 7.x+ (for BullMQ background job queues)
+- **Redis (Optional / Future Scale):** Version 7.x+ (superseded by Decision 7 for v0.1.0; PostgreSQL-backed queues are used initially)
 - **Docker:** Docker Engine 24.x+ with Buildx (required for executing isolated build runners)
 - **Git:** 2.40+
 
@@ -59,7 +59,7 @@ Apply the database migrations:
 npm run db:migrate
 ```
 
-Alternatively, use Docker Compose to start local PostgreSQL and Redis backing services:
+Alternatively, use Docker Compose to start local backing services (see [Docker Compose Local Development Guide](../deployment/DOCKER_COMPOSE_DEVELOPMENT.md)):
 ```bash
 docker compose -f infrastructure/docker-compose.dev.yml up -d
 ```

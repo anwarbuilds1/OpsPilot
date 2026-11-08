@@ -21,7 +21,7 @@ An exhaustive forensic audit of the Git tree and filesystem resolved all reporte
 
 ### Discrepancy 2: License File Existence vs. Lack of License Grant
 - **Exact Evidence:**
-  - A root file named [`LICENSE`](../LICENSE) exists in the repository (size: 479 bytes).
+  - A root file named [`LICENSE`](../../LICENSE) exists in the repository (size: 479 bytes).
   - Inspection of its content reveals it is an **All-Rights-Reserved Placeholder Notice**:
     > *"The open-source license for OpsPilot is currently pending formal selection and approval by the project owner... Until an open-source license is formally accepted and ratified in ADR-0013, all rights are reserved by the OpsPilot contributors."*
 - **The Discrepancy:** The audit analyzed this placeholder file, while also stating that "no license exists" (referring to the absence of an active OSI-approved open-source license grant like Apache-2.0 or MIT).
@@ -243,7 +243,7 @@ A comprehensive inventory of all **114 project Markdown documents** (excluding `
 | **`docs/engineering/TESTING_STANDARDS.md`**| Staged testing pyramid & anti-deception rules | Authoritative Spec | QA / Platform | Overlaps with `docs/engineering/TESTING_STRATEGY.md` | **Retain** (Consolidate testing strategy) |
 | **`docs/engineering/CI_CD_STANDARDS.md`** | Multi-stage GitHub Actions pipeline & signing | Authoritative Spec | DevOps Team | Overlaps with `docs/deployment/CI_CD.md` | **Retain** (Consolidate deployment CI) |
 | **`docs/engineering/DOCUMENTATION_STANDARDS.md`**| Taxonomy, documentation rules & ADR lifecycle | Authoritative Spec | Maintainers | None | **Retain** |
-| **`docs/development/LOCAL_DEVELOPMENT.md`** | Workstation prerequisites, PostgreSQL socket | Authoritative Guide| Platform Team | Overlaps with `docs/deployment/LOCAL_DEVELOPMENT.md` | **Retain** (Consolidate deployment local) |
+| **`docs/development/LOCAL_DEVELOPMENT.md`** | Workstation prerequisites, PostgreSQL socket | Authoritative Guide| Platform Team | Distinct from `docs/deployment/DOCKER_COMPOSE_DEVELOPMENT.md` | **Retain** |
 | **`docs/development/ENVIRONMENT_CONFIGURATION.md`**| Environment variable catalog & Zod validation | Authoritative Spec | Core Architecture | Overlaps with `docs/engineering/ENVIRONMENT_VARIABLES.md` | **Retain** (Consolidate engineering env) |
 | **`docs/testing/TEST_STRATEGY.md`** | Vitest harness architecture & DB isolation | Authoritative Spec | Platform Team | None | **Retain** |
 | **`docs/releases/RELEASE_PROCESS.md`** | SemVer, SBOM generation & Cosign signing | Authoritative Spec | Release Team | Overlaps with `docs/open-source/RELEASE_PROCESS.md` | **Retain** (Consolidate open-source release) |
@@ -253,7 +253,7 @@ A comprehensive inventory of all **114 project Markdown documents** (excluding `
 | **`docs/operations/*` (2 docs)** | Incident response & troubleshooting runbooks | Operations Specs | SRE / Ops | None | **Retain** |
 | **`docs/security/*` (5 docs)** | Threat model, credentials, runner security | Security Specs | Security Team | None | **Retain** |
 
-**Canonical Index Rule:** [docs/README.md](README.md) is established as the sole authoritative index. All redundant sub-indices will be consolidated during Phase 0 without breaking links.
+**Canonical Index Rule:** [docs/README.md](../README.md) is established as the sole authoritative index. All redundant sub-indices will be consolidated during Phase 0 without breaking links.
 
 ---
 

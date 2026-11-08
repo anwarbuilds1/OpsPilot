@@ -13,7 +13,7 @@ Because OpsPilot operates as an infrastructure control plane with elevated acces
 1. **Customer Cloud Credentials:** Temporary AWS STS session tokens, SSH private keys for VPS access, GitHub App installation tokens.
 2. **Customer Source Code & Intellectual Property:** Git repositories, commit histories, proprietary algorithms, and Dockerfiles.
 3. **Production Application Telemetry:** Application logs, health check metrics, error stack traces (which may contain PII or tokens).
-4. **OpsPilot System Integrity:** PostgreSQL state store, BullMQ Redis queues, build runner sandboxes, API availability.
+4. **OpsPilot System Integrity:** PostgreSQL state store and queue table (PostgreSQL-backed queue — selected architecture, implementation pending), build runner sandboxes, API availability.
 
 ---
 
@@ -34,7 +34,7 @@ Because OpsPilot operates as an infrastructure control plane with elevated acces
 | **Tampering** | Attacker tampers with deployment state or alters build artifacts. | In-transit tampering; SQL injection in deployment parameters. | TLS 1.3 encryption on all connections; parameterized SQL queries / ORM; SHA-256 digest pinning on Docker images in ECR. |
 | **Repudiation** | User denies triggering an unauthorized rollback or destructive action. | Lack of action traceability. | Immutable, append-only `audit_logs` table recording actor ID, IP address, timestamp, and action parameters. |
 | **Information Disclosure** | Cross-tenant data leakage; secrets exposed in logs or AI context. | IDOR vulnerability; plaintext secret logging. | Enforced `organization_id` scoping on all queries; envelope encryption (AES-256-GCM); streaming regex secret scrubber. |
-| **Denial of Service** | Resource starvation in API or workers; runaway build loops. | Spammed deployment requests; fork-bomb in repository Dockerfile. | BullMQ queue concurrency limits; 15-minute hard timeout on builds; cgroup CPU/memory quotas on build runners. |
+| **Denial of Service** | Resource starvation in API or workers; runaway build loops. | Spammed deployment requests; fork-bomb in repository Dockerfile. | Queue concurrency limits (PostgreSQL-backed queue — selected architecture, implementation pending); 15-minute hard timeout on builds; cgroup CPU/memory quotas on build runners. |
 | **Elevation of Privilege** | Container escape from build runner; AI agent tricked into executing write commands. | Mounted Docker socket; indirect prompt injection. | Non-root build runner without Docker socket mount; strictly read-only AI tools; mandatory human approval gate. |
 
 ---
@@ -56,10 +56,10 @@ flowchart TD
     end
 
     subgraph CorePlane [Zone 2: Core Control Plane]
-        API[NestJS API Service]
-        Queue[(Redis & BullMQ)]
+        API[NestJS API Service\n(PLANNED - Phase 3)]
+        Queue[("PostgreSQL-Backed Queue\n(Selected Architecture - Implementation Pending)")]
         DB[(PostgreSQL Primary Store)]
-        Vault[Envelope Encryption Service]
+        Vault[Envelope Encryption Service\n(Target Architecture)]
     end
 
     subgraph IsolatedExecution [Zone 3: Isolated Execution Sandbox]

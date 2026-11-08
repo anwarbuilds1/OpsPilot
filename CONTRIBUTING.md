@@ -86,7 +86,7 @@ All contributions must adhere to our authoritative engineering standards:
 
 ## 5. Pull Request (PR) Workflow
 
-1. **Keep PRs Atomic:** Submit focused PRs matching atomic boundaries defined in the [Phased Implementation Roadmap](docs/PROJECT_IMPLEMENTATION_ROADMAP.md).
+1. **Keep PRs Atomic:** Submit focused PRs matching atomic boundaries defined in the [Phased Implementation Roadmap](docs/phases/PROJECT_IMPLEMENTATION_ROADMAP.md).
 2. **Include Tests:** All domain logic, state machines, and cryptographic flows require accompanying unit/integration tests.
 3. **Run Pre-flight Checks Locally:**
    ```bash

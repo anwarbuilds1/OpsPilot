@@ -1,7 +1,9 @@
 # OpsPilot — Coding Conventions & TypeScript Style Guide
 
-> **Audience:** All Software Engineers, Systems Architects, AI Agents  
-> **Status:** Mandatory Specification  
+> **Audience:** All Software Engineers, Systems Architects, AI Agents
+> **Target Language:** TypeScript 5.x / Node.js 20 LTS
+> **Linter:** ESLint + Prettier
+> **Status:** Mandatory Specification
 > **Date:** November 2026
 
 ---
@@ -38,6 +40,17 @@ OpsPilot enforces maximum TypeScript strictness across all workspaces via root a
 ### 1.2 Explicit Return Types
 - All public functions, NestJS service methods, repository operations, and controller endpoints **must declare explicit return types**.
 - Do not rely on type inference for exported module boundaries.
+```typescript
+// CORRECT
+public async getService(serviceId: string): Promise<ServiceDto> { ... }
+
+// FORBIDDEN
+public async getService(serviceId: string) { ... }
+```
+
+### 1.3 Immutability by Default
+- Prefer `readonly` properties for domain entities and value objects to guarantee immutability across module boundaries.
+- Array and object parameters in domain services should use `ReadonlyArray<T>` or `readonly` properties unless explicit mutation is required and justified.
 
 ---
 
@@ -174,3 +187,21 @@ import { CreateDeploymentDto } from '@opspilot/contracts';
 // 4. Local relative imports
 import { IntegrationsRepository } from './integrations.repository';
 ```
+
+---
+
+## 8. Layer Boundaries & Controller Responsibilities
+
+- Business logic resides strictly within domain services and use cases (`packages/domain`, `packages/application`), **never** in HTTP controllers or background worker scripts.
+- Controllers in `apps/api` are thin adapters responsible solely for:
+  1. Validating incoming DTOs using Zod or `class-validator`.
+  2. Extracting and validating tenant context from the request session.
+  3. Calling the appropriate domain or application use case.
+  4. Formatting and serializing the HTTP response.
+
+---
+
+## 9. Documentation & Comment Integrity
+
+- **Preserve Existing Documentation:** Maintain all existing technical rationale comments, architecture docstrings, and license headers when refactoring code.
+- **JSDoc Standards:** All public interfaces, exported functions, and complex algorithms must include JSDoc comments explaining preconditions, side effects, failure modes, and security constraints.

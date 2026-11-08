@@ -63,18 +63,18 @@ flowchart TD
     end
 
     subgraph CorePlane [Control Plane Boundary: Core Application Tier]
-        API[NestJS Core API Service]
-        BullMQ[Redis Queue / Transient State]
+        API[NestJS Core API Service\n(PLANNED - Phase 3)]
+        PostgresQueue[("PostgreSQL-Backed Queue\n(Selected Architecture - Implementation Pending)")]
     end
 
     subgraph StorageBoundary [Secure Storage Boundary]
         PG[(PostgreSQL 16 Database)]
-        Vault[Envelope Encryption Service / KMS]
+        Vault[Envelope Encryption Service / KMS\n(Target Architecture)]
     end
 
     subgraph SandboxBoundary [Isolated Execution Boundary]
-        Runner[Ephemeral Build Runner Container<br/>No root, no host mount, egress limit]
-        AIGateway[AI Gateway Sandbox<br/>Sanitized prompts, no credentials]
+        Runner[Ephemeral Build Runner Container\n(PLANNED - Phase 1)\nNo root, no host mount, egress limit]
+        AIGateway[AI Gateway Sandbox\n(PLANNED - Phase 7)\nSanitized prompts, no credentials]
     end
 
     subgraph CustomerCloud [Customer Infrastructure Boundary]
@@ -89,12 +89,12 @@ flowchart TD
     HMAC --> AuthGuard
     AuthGuard --> API
 
-    API --> BullMQ
+    API --> PostgresQueue
     API --> Vault
     API --> PG
 
-    BullMQ --> Runner
-    BullMQ --> AIGateway
+    PostgresQueue --> Runner
+    PostgresQueue --> AIGateway
 
     UntrustedRepo --> Runner
     UntrustedLogs --> API
@@ -111,9 +111,21 @@ flowchart TD
     class SandboxBoundary isolated;
 ```
 
+> [!IMPORTANT]
+> **Asynchronous Job Architecture Reality (November 2026):**
+> - **PostgreSQL-backed queue — selected architecture, implementation pending.** Per Project Foundation Decision 7 and ADR-0003 supersession, a PostgreSQL-backed queue is the ratified architecture for OpsPilot v0.1.0 to eliminate Redis operational overhead.
+> - **The queue implementation does not yet exist.** The database schema (`0001_initial_schema.sql`) contains no `job_queue` table; queue operations currently resolve to an in-memory mock publisher during unit tests.
+> - **No concrete worker consumer currently exists.** Only the abstract contract `IDeploymentJobConsumer` exists in `@opspilot/application`; no worker daemon (`apps/workers`) is running or scaffolded.
+> - **Transactional outbox and worker reliability mechanisms remain outstanding.** Dual-write vulnerabilities (`DEBT-01`), worker leases and heartbeat (`DEBT-02`), abandoned-job recovery (`DEBT-03`), and duplicate execution protection (`DEBT-04`) are tracked technical debt scheduled for Phase 2.
+
 ---
 
 ## 3. Credential Security: Envelope Encryption
+
+> [!NOTE]
+> **Target Architecture Specification:**
+> The flow and guarantees below represent the **target NIST SP 800-57 envelope encryption architecture**.
+> In the current codebase, [`EnvelopeEncryptionService`](../../packages/security/src/encryption/envelope-encryption.service.ts) was retained under a Phase 0 scope exception and implements **static tenant-derived HKDF key derivation** rather than random per-record DEKs, lacks wrapped DEK database persistence, lacks cryptographic AAD binding, and contains an insecure development fallback key (`SEC-01`, `SEC-02`, `SEC-03`, `SEC-04`). Refactoring to the true multi-tier DEK/KEK model specified below is scheduled for Phase 2.
 
 Infrastructure credentials (SSH private keys, AWS STS external IDs, webhook secrets) are never stored in plaintext:
 
@@ -140,6 +152,11 @@ flowchart LR
 ---
 
 ## 4. Deployment Runner Isolation
+
+> [!NOTE]
+> **Planned Architecture Specification:**
+> The runner hardening controls and container boundaries specified below represent the **target Phase 1 architecture**.
+> In Phase 0, Docker security flags are generated as configuration specifications in [`HardenedBuildRunner`](../../packages/deployment-providers/src/runners/hardened-build-runner.ts), but **no host-side Docker Engine orchestrator exists**, no process currently launches isolated build containers, and network egress controls are not enforced by a live controller. Implementation of the live host orchestrator is scheduled for Phase 1.
 
 Customer repositories contain user-controlled `Dockerfile` configurations and build scripts. If executed in the API process, malicious repositories could execute arbitrary commands (RCE) on OpsPilot servers.
 
