@@ -87,7 +87,7 @@ flowchart TD
         API -->|Enqueue Jobs| Queue[(PostgreSQL-Backed Queue<br/>Selected Architecture - Implementation Pending)]
     end
 
-    subgraph WorkerTier [Asynchronous Worker Tier (Planned)]
+    subgraph WorkerTier ["Asynchronous Worker Tier (Planned)"]
         Queue -->|Pulls deployment-queue| DepWorker[Deployment Worker]
         Queue -->|Pulls incident-queue| IncWorker[Incident Worker]
         Queue -->|Pulls ai-investigation-queue| AIWorker[AI Investigation Worker]

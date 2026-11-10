@@ -131,7 +131,7 @@ flowchart TD
         Registry["DeploymentProviderRegistry\n(@opspilot/deployment-providers)"]
     end
 
-    subgraph Adapters [Provider Adapters (Current Codebase)]
+    subgraph Adapters ["Provider Adapters (Current Codebase)"]
         AWS["AwsEcsProvider\n(Mocked Registry Client)"]
         VPS["VpsDockerProvider\n(Mocked SSH Pool)"]
         CFW["CloudflareWorkersProvider\n(Mocked Fetch Client)"]
@@ -327,19 +327,19 @@ Currently, the codebase contains port definitions and concrete adapter implement
 
 ```mermaid
 flowchart TD
-    subgraph DrivingLayer [Driving Layer (Inbound Triggers)]
+    subgraph DrivingLayer ["Driving Layer (Inbound Triggers)"]
         TestHarness["Test Harness / Scripts\n(Current Verification Wiring)"]
         API["NestJS API Controllers\n(PLANNED - Not Implemented)"]
         Worker["Background Job Worker\n(PLANNED - Not Implemented)"]
     end
 
-    subgraph ApplicationCore [Application Core (@opspilot/application)]
+    subgraph ApplicationCore ["Application Core (@opspilot/application)"]
         UseCases["Use Cases:\n- TriggerDeploymentUseCase\n- RollbackServiceUseCase"]
         Engine["DeploymentExecutionEngine"]
         Ports["Driven Ports:\n- IDeploymentRepositoryPort\n- DeploymentProviderPort\n- ISecretVaultPort\n- IJobPublisherPort\n- INotificationPort"]
     end
 
-    subgraph ConcreteAdapters [Concrete Adapters (Code Implemented - Not Composed at Runtime)]
+    subgraph ConcreteAdapters ["Concrete Adapters (Code Implemented - Not Composed at Runtime)"]
         DB["DeploymentsRepository / IntegrationsRepository\n(@opspilot/database)"]
         Vault["EnvelopeEncryptionService\n(@opspilot/security)"]
         Registry["DeploymentProviderRegistry\n(@opspilot/deployment-providers)"]
@@ -357,9 +357,9 @@ flowchart TD
     UseCases --> Ports
     Engine --> Ports
 
-    Ports -. Implemented By (No Runtime Wiring) .-> DB
-    Ports -. Implemented By (No Runtime Wiring) .-> Vault
-    Ports -. Implemented By (No Runtime Wiring) .-> Registry
+    Ports -.->|"Implemented By (No Runtime Wiring)"| DB
+    Ports -.->|"Implemented By (No Runtime Wiring)"| Vault
+    Ports -.->|"Implemented By (No Runtime Wiring)"| Registry
     Registry -. Contains .-> AWS
     Registry -. Contains .-> VPS
     Registry -. Contains .-> CFW
@@ -661,14 +661,14 @@ flowchart TD
         InsertEvent["INSERT INTO deployment_events\n(stage: Queued)"]
     end
 
-    subgraph WorkerPool [OpsPilot Background Worker Process (PLANNED)]
+    subgraph WorkerPool ["OpsPilot Background Worker Process (PLANNED)"]
         Poll["Acquire Job:\nSELECT ... FOR UPDATE SKIP LOCKED\nSET state = 'active', lease_expires_at = NOW() + 5m"]
         Heartbeat["Periodic Lease Renewal\n(Worker Heartbeat)"]
         Process["Invoke IDeploymentJobConsumer\n(DeploymentExecutionEngine)"]
         Complete["SET state = 'completed'\n(or 'failed' on max attempts)"]
     end
 
-    subgraph Reaper [Stranded-Job Reaper (PLANNED)]
+    subgraph Reaper ["Stranded-Job Reaper (PLANNED)"]
         Reap["SELECT FROM job_queue\nWHERE state = 'active' AND lease_expires_at < NOW()\nReset to 'available' or emit alert"]
     end
 
@@ -953,7 +953,7 @@ flowchart LR
     Alert["Incident Triggered\n(Error Rate > 5%)"] --> Gateway["AI Gateway\n(Provider Independent)"]
     Gateway --> Agent["Read-Only Investigation Agent"]
 
-    subgraph Tools [Bounded Diagnostic Tools (Read-Only)]
+    subgraph Tools ["Bounded Diagnostic Tools (Read-Only)"]
         Logs["Fetch Redacted Logs"]
         Diff["Inspect Commit Diffs"]
         Metrics["Query P99 Latencies"]

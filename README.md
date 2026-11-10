@@ -63,19 +63,19 @@ OpsPilot follows a **Modular Monolith** architecture with strict **Hexagonal (Po
 
 ```mermaid
 flowchart TD
-    subgraph DrivingLayer [Client & Trigger Layer]
+    subgraph DrivingLayer ["Client & Trigger Layer"]
         TestHarness["Test Harness / Scripts\n(Current Verification Wiring)"]
         API["NestJS API Layer\n(PLANNED - Phase 3)"]
         Queue["PostgreSQL-Backed Queue\n(Selected Architecture, Implementation Pending)"]
     end
 
-    subgraph ApplicationCore [Application Core (@opspilot/application)]
+    subgraph ApplicationCore ["Application Core (@opspilot/application)"]
         UseCases["Use Cases:\n- TriggerDeploymentUseCase\n- RollbackServiceUseCase"]
         Engine["DeploymentExecutionEngine\n(11-Stage State Machine Orchestrator)"]
         Ports["Driven Ports:\n- IDeploymentRepositoryPort\n- DeploymentProviderPort\n- ISecretVaultPort\n- IJobPublisherPort"]
     end
 
-    subgraph Adapters [Infrastructure & Provider Adapters (Code Implemented)]
+    subgraph Adapters ["Infrastructure & Provider Adapters (Code Implemented)"]
         DB["PostgreSQL Repositories\n(@opspilot/database)"]
         Security["Envelope Encryption Service\n(@opspilot/security)"]
         AWS["AwsEcsProvider (Mock I/O)"]
@@ -92,12 +92,12 @@ flowchart TD
     UseCases --> Ports
     Engine --> Ports
 
-    Ports -. Implemented By (No Runtime Wiring) .-> DB
-    Ports -. Implemented By (No Runtime Wiring) .-> Security
-    Ports -. Implemented By (No Runtime Wiring) .-> AWS
-    Ports -. Implemented By (No Runtime Wiring) .-> VPS
-    Ports -. Implemented By (No Runtime Wiring) .-> CFW
-    Ports -. Implemented By (No Runtime Wiring) .-> CFP
+    Ports -.->|"Implemented By (No Runtime Wiring)"| DB
+    Ports -.->|"Implemented By (No Runtime Wiring)"| Security
+    Ports -.->|"Implemented By (No Runtime Wiring)"| AWS
+    Ports -.->|"Implemented By (No Runtime Wiring)"| VPS
+    Ports -.->|"Implemented By (No Runtime Wiring)"| CFW
+    Ports -.->|"Implemented By (No Runtime Wiring)"| CFP
 
     classDef planned fill:#f9f9f9,stroke:#999,stroke-dasharray: 5 5;
     class API,Queue planned;
