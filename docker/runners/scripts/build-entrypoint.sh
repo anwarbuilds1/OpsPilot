@@ -24,9 +24,12 @@ else
 fi
 
 # Execute customer-specified build command if provided
-if [ -n "${OPSPILOT_BUILD_COMMAND:-}" ]; then
+if [ $# -gt 0 ]; then
+  echo "[OpsPilot Runner] Executing build arguments: $*"
+  exec "$@"
+elif [ -n "${OPSPILOT_BUILD_COMMAND:-}" ]; then
   echo "[OpsPilot Runner] Executing build command: ${OPSPILOT_BUILD_COMMAND}"
-  eval "${OPSPILOT_BUILD_COMMAND}"
+  exec bash -c "${OPSPILOT_BUILD_COMMAND}"
 fi
 
 echo "[OpsPilot Runner] Build execution completed successfully."

@@ -12,8 +12,9 @@
     "build": "tsc -b",
     "typecheck": "tsc -b",
     "lint": "eslint packages/*/src/**/*.ts",
+    "pretest": "tsc -b",
     "test": "vitest run",
-    "test:unit": "vitest run packages/domain packages/contracts packages/security packages/deployment-providers",
+    "test:unit": "vitest run packages/domain packages/contracts packages/security packages/deployment-providers packages/application",
     "test:db": "vitest run packages/database",
     "test:security": "vitest run packages/deployment-providers/tests/hardened-build-runner.spec.ts packages/security/tests/secret-redactor.spec.ts"
   },

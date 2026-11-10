@@ -28,6 +28,8 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
       const envKey = process.env.OPSPILOT_MASTER_KEY;
       if (envKey && envKey.length === 64) {
         this.masterKey = Buffer.from(envKey, 'hex');
+      } else if (process.env.NODE_ENV === 'production') {
+        throw new Error('OPSPILOT_MASTER_KEY environment variable (64 hex characters) is required in production');
       } else {
         // Deterministic fallback for dev/test environments
         this.masterKey = crypto.createHash('sha256').update('opspilot-default-dev-master-key-2026').digest();
@@ -55,6 +57,7 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
     const dek = this.deriveTenantKey(organizationId, this.currentKeyVersion);
 
     const cipher = crypto.createCipheriv(this.algorithm, dek, iv);
+    cipher.setAAD(Buffer.from(organizationId, 'utf-8'));
     let encrypted = cipher.update(plaintext, 'utf-8', 'base64');
     encrypted += cipher.final('base64');
     const authTag = cipher.getAuthTag();
@@ -80,6 +83,7 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
     const dek = this.deriveTenantKey(organizationId, record.keyVersion);
 
     const decipher = crypto.createDecipheriv(this.algorithm, dek, iv);
+    decipher.setAAD(Buffer.from(organizationId, 'utf-8'));
     decipher.setAuthTag(authTag);
 
     try {

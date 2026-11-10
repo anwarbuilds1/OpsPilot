@@ -67,6 +67,24 @@ describe('EnvelopeEncryptionService', () => {
     expect(customService.decrypt(record, org1)).toBe('custom-key-test');
   });
 
+  it('rejects fallback master key when NODE_ENV is production', () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalKey = process.env.OPSPILOT_MASTER_KEY;
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.OPSPILOT_MASTER_KEY;
+
+      expect(() => new EnvelopeEncryptionService()).toThrow(
+        /OPSPILOT_MASTER_KEY environment variable .* is required in production/
+      );
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalKey !== undefined) {
+        process.env.OPSPILOT_MASTER_KEY = originalKey;
+      }
+    }
+  });
+
   it('rejects empty plaintext or missing organizationId', () => {
     expect(() => service.encrypt('', org1)).toThrow(/Plaintext cannot be empty/);
     expect(() => service.encrypt(secretData, '')).toThrow(/organizationId is required/);
