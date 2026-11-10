@@ -3,6 +3,7 @@ import {
   createDatabasePool,
   IntegrationsRepository,
 } from '../src/index.js';
+import { ensureDatabaseMigrated } from './test-helper.js';
 
 describe('IntegrationsRepository (Cloudflare & Multi-tenant Credentials)', () => {
   const pool = createDatabasePool();
@@ -14,6 +15,8 @@ describe('IntegrationsRepository (Cloudflare & Multi-tenant Credentials)', () =>
   const cfApiToken = 'v1.0-cf-token-secret-999888777666555444333222111';
 
   beforeAll(async () => {
+    await ensureDatabaseMigrated(pool);
+
     // Clean up any stale integration from previous runs
     await pool.query(`DELETE FROM integrations WHERE id = $1;`, [integrationId]);
 
@@ -30,6 +33,7 @@ describe('IntegrationsRepository (Cloudflare & Multi-tenant Credentials)', () =>
 
   afterAll(async () => {
     await pool.query(`DELETE FROM integrations WHERE id = $1;`, [integrationId]);
+    await pool.query(`DELETE FROM organizations WHERE id IN ($1, $2);`, [orgA, orgB]);
     await pool.end();
   });
 

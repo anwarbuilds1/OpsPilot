@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabasePool } from '../src/index.js';
+import { ensureDatabaseMigrated } from './test-helper.js';
 
 describe('PostgreSQL Conditional Constraint: check_container_runtime_fields', () => {
   const pool = createDatabasePool();
@@ -7,6 +8,8 @@ describe('PostgreSQL Conditional Constraint: check_container_runtime_fields', ()
   const testProjId = 'b0000000-0000-0000-0000-000000000001';
 
   beforeAll(async () => {
+    await ensureDatabaseMigrated(pool);
+
     await pool.query(`
       INSERT INTO organizations (id, name, slug) 
       VALUES ($1, 'Acme Corp', 'acme-corp')

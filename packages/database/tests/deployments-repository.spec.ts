@@ -9,6 +9,7 @@ import {
   DeploymentsRepository,
   ServicesRepository,
 } from '../src/index.js';
+import { ensureDatabaseMigrated } from './test-helper.js';
 
 describe('DeploymentsRepository & State Transition Idempotency', () => {
   const pool = createDatabasePool();
@@ -23,6 +24,8 @@ describe('DeploymentsRepository & State Transition Idempotency', () => {
   const depId = '01000000-0000-0000-0000-000000000001';
 
   beforeAll(async () => {
+    await ensureDatabaseMigrated(pool);
+
     // Seed Org A
     await pool.query(`INSERT INTO organizations (id, name, slug) VALUES ($1, 'Org A', 'org-a') ON CONFLICT DO NOTHING;`, [orgA]);
     // Seed Org B

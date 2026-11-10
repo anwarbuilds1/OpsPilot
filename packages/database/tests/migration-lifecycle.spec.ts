@@ -14,6 +14,10 @@ describe('PostgreSQL Migration Lifecycle (Isolated Schema)', () => {
   beforeAll(async () => {
     // 1. Administrative pool with default public search path to manage isolated test schema
     adminPool = createDatabasePool();
+    // Ensure public schema migrations are applied first for baseline checks
+    const adminRunner = new MigrationRunner(adminPool);
+    await adminRunner.up(migrationsDir);
+
     await adminPool.query(`DROP SCHEMA IF EXISTS ${TEST_SCHEMA} CASCADE;`);
     await adminPool.query(`CREATE SCHEMA ${TEST_SCHEMA};`);
 

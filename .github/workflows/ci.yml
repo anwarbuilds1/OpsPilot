@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -48,34 +51,31 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: |
-          if [ -f package.json ]; then
-            npm ci || npm install
-          else
-            echo "package.json not yet initialized for code-quality stage."
-          fi
+        run: npm ci
 
       - name: Run Linting
-        run: |
-          if [ -f package.json ] && grep -q '"lint"' package.json; then
-            npm run lint
-          else
-            echo "Skipping lint: script not yet registered."
-          fi
+        run: npm run lint
 
       - name: Run Type Check
-        run: |
-          if [ -f package.json ] && grep -q '"typecheck"' package.json; then
-            npm run typecheck
-          elif [ -f tsconfig.json ] && [ -n "$(find . -name '*.ts' -not -path '*/node_modules/*' -print -quit)" ]; then
-            npx tsc --noEmit
-          else
-            echo "Skipping typecheck: no TypeScript source files to compile yet."
-          fi
+        run: npm run typecheck
 
   unit-tests:
     name: Unit & Contract Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -85,10 +85,10 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Dependencies
+        run: npm ci
+
       - name: Run Unit Tests
-        run: |
-          if [ -f package.json ] && grep -q '"test"' package.json; then
-            npm test
-          else
-            echo "Unit test suite ready for Phase 1 implementation."
-          fi
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/postgres
+        run: npm test
