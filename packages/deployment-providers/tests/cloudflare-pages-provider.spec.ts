@@ -36,6 +36,9 @@ describe('CloudflarePagesProvider', () => {
       production_branch: 'main',
       created_on: '2026-11-08T00:00:00Z',
     }),
+    createPagesDirectUploadSession: vi.fn().mockResolvedValue({ jwt: 'mock-jwt', uploadUrl: 'https://upload.pages.dev' }),
+    checkMissingPagesAssets: vi.fn().mockResolvedValue([]),
+    uploadPagesMissingAssets: vi.fn().mockResolvedValue(undefined),
     createPagesDirectUploadDeployment: vi.fn().mockResolvedValue({
       id: 'pages-dep-uuid-1',
       short_id: 'dep1234',
@@ -230,5 +233,124 @@ describe('CloudflarePagesProvider', () => {
     const unhealthy = await provider.checkHealth('https://unhealthy-portal.pages.dev/health');
     expect(unhealthy.isHealthy).toBe(false);
     expect(unhealthy.httpStatusCode).toBe(404);
+  });
+
+  it('rejects rollback for preview deployments with explicit domain error', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+
+    // 1. Explicit environment in credentials
+    await expect(
+      provider.rollback(
+        validPagesConfig.deploymentId,
+        'pages-preview-uuid',
+        {
+          apiToken: dummyToken,
+          accountId: dummyAccountId,
+          projectName: 'marketing-portal',
+          environment: 'preview',
+        },
+      ),
+    ).rejects.toThrow(/Cloudflare Pages rollback is only supported for production deployments/);
+
+    // 2. Queried deployment reports preview environment
+    (mockApiClient.getPagesDeployment as any).mockResolvedValueOnce({
+      id: 'preview-dep-id',
+      short_id: 'prev1',
+      project_id: 'proj-uuid-1',
+      project_name: 'marketing-portal',
+      environment: 'preview',
+      url: 'https://prev1.marketing-portal.pages.dev',
+      created_on: '2026-11-08T00:00:00Z',
+    });
+
+    await expect(
+      provider.rollback(
+        validPagesConfig.deploymentId,
+        'preview-dep-id',
+        {
+          apiToken: dummyToken,
+          accountId: dummyAccountId,
+          projectName: 'marketing-portal',
+        },
+      ),
+    ).rejects.toThrow(/Cloudflare Pages rollback is only supported for production deployments/);
+  });
+
+  it('detects and warns on uncompiled functions/ without _worker.js', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+    const configWithFunctions = {
+      ...validPagesConfig,
+      sourceFiles: {
+        '/functions/api/users.ts': 'export const onRequestGet = () => Response.json([]);',
+        '/index.html': '<!DOCTYPE html><html><body>Static</body></html>',
+      },
+    };
+
+    const prepared = await provider.prepareDeployment(configWithFunctions as any);
+    expect(prepared.artifact.metadata['hasUncompiledFunctions']).toBe(true);
+    expect(prepared.artifact.metadata['hasCompiledWorker']).toBe(false);
+  });
+
+  it('recognizes compiled _worker.js entrypoint for Pages Functions', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+    const configWithCompiledWorker = {
+      ...validPagesConfig,
+      sourceFiles: {
+        '/_worker.js': 'export default { fetch: (req) => new Response("OK") };',
+        '/index.html': '<!DOCTYPE html><html><body>Static</body></html>',
+      },
+    };
+
+    const prepared = await provider.prepareDeployment(configWithCompiledWorker as any);
+    expect(prepared.artifact.metadata['hasCompiledWorker']).toBe(true);
+    expect(prepared.artifact.metadata['hasUncompiledFunctions']).toBe(false);
+  });
+
+  it('strictly rejects deployment when functionsMode is required and _worker.js is missing', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+    const configRequiredFunctions: CloudflarePagesDeploymentConfig = {
+      ...validPagesConfig,
+      functionsMode: 'required',
+      sourceFiles: {
+        '/functions/api/checkout.ts': 'export const onRequestPost = () => {};',
+        '/index.html': '<html><body>Store</body></html>',
+      },
+    } as any;
+
+    await expect(provider.prepareDeployment(configRequiredFunctions)).rejects.toThrow(
+      /Cloudflare Pages deployment for 'marketing-portal' requires compiled Functions \('_worker.js'\)/,
+    );
+  });
+
+  it('allows deployment when functionsMode is required and _worker.js is present', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+    const configRequiredWithWorker: CloudflarePagesDeploymentConfig = {
+      ...validPagesConfig,
+      functionsMode: 'required',
+      sourceFiles: {
+        '/_worker.js': 'export default { fetch: () => new Response("Worker") };',
+        '/index.html': '<html><body>Store</body></html>',
+      },
+    } as any;
+
+    const prepared = await provider.prepareDeployment(configRequiredWithWorker);
+    expect(prepared.artifact.metadata['functionsMode']).toBe('required');
+    expect(prepared.artifact.metadata['hasCompiledWorker']).toBe(true);
+  });
+
+  it('allows deployment as pure static CDN when functionsMode is static_only', async () => {
+    const provider = new CloudflarePagesProvider(mockApiClient);
+    const configStaticOnly: CloudflarePagesDeploymentConfig = {
+      ...validPagesConfig,
+      functionsMode: 'static_only',
+      sourceFiles: {
+        '/functions/api/legacy.ts': 'export const onRequest = () => {};',
+        '/index.html': '<html><body>Pure Static</body></html>',
+      },
+    } as any;
+
+    const prepared = await provider.prepareDeployment(configStaticOnly);
+    expect(prepared.artifact.metadata['functionsMode']).toBe('static_only');
+    expect(prepared.artifact.metadata['hasCompiledWorker']).toBe(false);
   });
 });

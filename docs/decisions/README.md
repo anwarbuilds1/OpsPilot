@@ -36,3 +36,6 @@ OpsPilot follows the ADR process to document significant architectural shifts, f
 | [**ADR-0016**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0016-nodejs-isolated-build-runner-for-cloudflare-targets) | Node.js Isolated Build Runner for Cloudflare Targets | Accepted | Build Security |
 | [**ADR-0017**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0017-polymorphic-deployment-configuration-and-database-schema-evolution) | Polymorphic Deployment Configuration & Schema Evolution | Accepted | Database & Domain |
 | [**ADR-0018**](../integrations/cloudflare/CLOUDFLARE_ARCHITECTURE_DECISIONS.md#adr-0018-cloudflare-api-token-scoping-and-envelope-encryption) | Cloudflare API Token Scoping & Envelope Encryption | Accepted | Security & Vault |
+| [**ADR-0019**](ADR-0019-encryption-versioning-and-aad-migration.md) | Envelope Encryption Versioning & AAD Backward-Compatible Migration | Accepted | Security & Cryptography |
+| [**ADR-0020**](ADR-0020-build-runner-argv-sandboxing-and-network-isolation.md) | Build Runner Argv Sandboxing & Network Isolation | Accepted | Build Security & Isolation |
+| [**ADR-0021**](ADR-0021-cloudflare-direct-upload-lifecycle-and-worker-secrets.md) | Cloudflare Direct Upload Multi-Stage Lifecycle & Worker Secrets Sequencing | Accepted | Cloudflare Integration |

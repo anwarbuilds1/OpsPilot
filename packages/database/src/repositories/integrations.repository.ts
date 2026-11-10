@@ -204,6 +204,84 @@ export class IntegrationsRepository {
   }
 
   /**
+   * Safely and idempotently migrates legacy (v1, pre-AAD) credentials to modern (v2, with AAD) credentials.
+   * Can be run per-organization or cluster-wide in a safe, retryable manner.
+   *
+   * Counter semantics:
+   * - `total`: Candidate records discovered with key_version = 1 at the start of the batch.
+   * - `migrated`: Records where key_version was actively updated from 1 to 2 by this transaction (rowCount > 0).
+   * - `skipped`: Candidate records not migrated by this call, either because decryption/rotation failed
+   *   or because a concurrent worker already updated the record (rowCount === 0).
+   */
+  async migrateLegacyCredentials(
+    organizationId?: string,
+  ): Promise<{ total: number; migrated: number; skipped: number }> {
+    let selectQuery = `
+      SELECT id, integration_id, organization_id, encrypted_payload, auth_tag, initialization_vector, key_version
+      FROM integration_credentials
+      WHERE key_version = 1
+    `;
+    const params: unknown[] = [];
+    if (organizationId) {
+      selectQuery += ` AND organization_id = $1`;
+      params.push(organizationId);
+    }
+
+    const client = await this.pool.connect();
+    let migrated = 0;
+    let skipped = 0;
+
+    try {
+      await client.query('BEGIN');
+      const res = await client.query(selectQuery, params);
+
+      for (const row of res.rows) {
+        const legacyRecord: EncryptedDataRecord = {
+          encryptedPayload: row.encrypted_payload,
+          authTag: row.auth_tag,
+          initializationVector: row.initialization_vector,
+          keyVersion: row.key_version,
+        };
+
+        try {
+          const v2Record = this.encryptionService.rotate(legacyRecord, row.organization_id);
+          const updateRes = await client.query(
+            `
+            UPDATE integration_credentials
+            SET encrypted_payload = $1, auth_tag = $2, initialization_vector = $3, key_version = $4, updated_at = NOW()
+            WHERE id = $5 AND key_version = 1;
+            `,
+            [
+              v2Record.encryptedPayload,
+              v2Record.authTag,
+              v2Record.initializationVector,
+              v2Record.keyVersion,
+              row.id,
+            ],
+          );
+
+          if ((updateRes.rowCount ?? 0) > 0) {
+            migrated++;
+          } else {
+            // Concurrently updated by another transaction or deleted
+            skipped++;
+          }
+        } catch {
+          skipped++;
+        }
+      }
+
+      await client.query('COMMIT');
+      return { total: res.rows.length, migrated, skipped };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Revoke an integration by marking its status as 'revoked'.
    */
   async revoke(integrationId: string, organizationId: string): Promise<boolean> {

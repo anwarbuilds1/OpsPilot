@@ -23,13 +23,13 @@ else
   echo "[OpsPilot Runner] No lockfile detected. Proceeding with caution..."
 fi
 
-# Execute customer-specified build command if provided
+# Execute customer-specified build command via argv without shell evaluation
 if [ $# -gt 0 ]; then
-  echo "[OpsPilot Runner] Executing build arguments: $*"
+  echo "[OpsPilot Runner] Executing direct argv arguments: $*"
   exec "$@"
 elif [ -n "${OPSPILOT_BUILD_COMMAND:-}" ]; then
-  echo "[OpsPilot Runner] Executing build command: ${OPSPILOT_BUILD_COMMAND}"
-  exec bash -c "${OPSPILOT_BUILD_COMMAND}"
+  echo "[OpsPilot Security Violation] OPSPILOT_BUILD_COMMAND string execution is disabled for security; pass argv arguments directly." >&2
+  exit 1
 fi
 
 echo "[OpsPilot Runner] Build execution completed successfully."

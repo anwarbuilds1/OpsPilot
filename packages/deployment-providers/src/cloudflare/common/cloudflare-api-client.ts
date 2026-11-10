@@ -413,6 +413,71 @@ export class CloudflareApiClient implements ICloudflareApiClient {
     }
   }
 
+  async createPagesDirectUploadSession(
+    accountId: string,
+    projectName: string,
+    apiToken: string,
+  ): Promise<{ jwt: string; uploadUrl?: string }> {
+    const res = await this.request<{
+      success: boolean;
+      result: {
+        id: string;
+        jwt?: string;
+        upload_url?: string;
+      };
+    }>(`/accounts/${accountId}/pages/projects/${projectName}/direct_upload`, apiToken, {
+      method: 'POST',
+    });
+
+    const jwt = res.result.jwt ?? res.result.id;
+    return {
+      jwt,
+      uploadUrl: res.result.upload_url,
+    };
+  }
+
+  async checkMissingPagesAssets(
+    hashes: readonly string[],
+    sessionJwt: string,
+  ): Promise<string[]> {
+    if (hashes.length === 0) {
+      return [];
+    }
+
+    const res = await this.request<{
+      success: boolean;
+      result: string[];
+    }>('/pages/assets/check-missing', sessionJwt, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hashes }),
+    });
+
+    return res.result ?? [];
+  }
+
+  async uploadPagesMissingAssets(
+    missingFiles: ReadonlyArray<{ hash: string; content: Buffer }>,
+    sessionJwt: string,
+  ): Promise<void> {
+    if (missingFiles.length === 0) {
+      return;
+    }
+
+    const payload = missingFiles.map((file) => ({
+      key: file.hash,
+      value: file.content.toString('base64'),
+      metadata: { contentType: 'application/octet-stream' },
+      base64: true,
+    }));
+
+    await this.request<{ success: boolean }>('/pages/assets/upload', sessionJwt, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
   async createPagesDirectUploadDeployment(
     accountId: string,
     projectName: string,
@@ -439,18 +504,36 @@ export class CloudflareApiClient implements ICloudflareApiClient {
       }
     }
 
+    // Stage 1: Acquire Direct Upload session (JWT token)
+    const session = await this.createPagesDirectUploadSession(accountId, projectName, apiToken);
+
+    // Stage 2: Deduplicate and check missing asset hashes
+    const allHashes = Array.from(new Set(Object.values(manifest)));
+    const missingHashes = await this.checkMissingPagesAssets(allHashes, session.jwt);
+
+    // Stage 3: Upload only missing assets
+    if (missingHashes.length > 0) {
+      const missingSet = new Set(missingHashes);
+      const missingFilesToUpload: Array<{ hash: string; content: Buffer }> = [];
+
+      for (const [filePath, buffer] of files.entries()) {
+        const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+        const hash = manifest[cleanPath] ?? manifest[filePath];
+        if (hash && missingSet.has(hash)) {
+          missingFilesToUpload.push({ hash, content: buffer });
+          missingSet.delete(hash); // only upload unique hash once
+        }
+      }
+
+      if (missingFilesToUpload.length > 0) {
+        await this.uploadPagesMissingAssets(missingFilesToUpload, session.jwt);
+      }
+    }
+
+    // Stage 4: Finalize deployment with manifest and target environment
     const formData = new FormData();
     formData.append('manifest', JSON.stringify(manifest));
-
-    for (const [filePath, buffer] of files.entries()) {
-      // Clean path to remove leading slash
-      const cleanPath = filePath.replace(/^\/+/, '');
-      formData.append(
-        cleanPath,
-        new Blob([new Uint8Array(buffer)], { type: 'application/octet-stream' }),
-        cleanPath,
-      );
-    }
+    formData.append('environment', environment);
 
     const res = await this.request<{
       success: boolean;

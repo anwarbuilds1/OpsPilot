@@ -2,11 +2,13 @@ import {
   ApplicationRuntimes,
   ArtifactTypes,
   BuildStrategies,
+  ConfigurationValidationException,
   ConnectionResult,
   DeploymentCapabilities,
   DeploymentConfig,
   DeploymentResult,
   DeploymentStatusResult,
+  DomainException,
   HealthCheckResult,
   isCloudflarePagesConfig,
   PreparedDeployment,
@@ -20,6 +22,12 @@ import { ICloudflareApiClient } from '../collaborators/cloudflare-api-client.int
 import { CloudflareApiClient } from '../cloudflare/common/cloudflare-api-client.js';
 import { ILogger } from '../interfaces/logger.interface.js';
 import * as crypto from 'node:crypto';
+
+export class InvalidRollbackEnvironmentException extends DomainException {
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, 'INVALID_ROLLBACK_ENVIRONMENT', context);
+  }
+}
 
 export class CloudflarePagesProvider extends BaseDeploymentProvider {
   readonly providerType = TargetProviders.CLOUDFLARE_PAGES;
@@ -140,6 +148,39 @@ export class CloudflarePagesProvider extends BaseDeploymentProvider {
       totalSizeBytes += buffer.length;
     }
 
+    const functionsMode = config.functionsMode ?? 'optional_fallback';
+
+    // Validate Pages Functions deployment policy
+    const manifestKeys = Object.keys(manifest);
+    const hasRawFunctions = manifestKeys.some((k) => k.startsWith('/functions/') || k.startsWith('functions/'));
+    const hasCompiledWorker = manifestKeys.includes('/_worker.js') || manifestKeys.includes('_worker.js');
+
+    if (functionsMode === 'required') {
+      if (!hasCompiledWorker) {
+        throw new ConfigurationValidationException(
+          `Cloudflare Pages deployment for '${config.projectName}' requires compiled Functions ('_worker.js'), but none was found in the asset manifest. ` +
+          `Pages Functions must be pre-compiled into '_worker.js' prior to upload when functionsMode is 'required'.`,
+          'functionsMode',
+          { projectName: config.projectName, functionsMode, hasCompiledWorker, hasRawFunctions },
+        );
+      }
+    } else if (functionsMode === 'static_only') {
+      if (hasRawFunctions) {
+        this.logger.info(
+          `[CloudflarePagesProvider] Project is configured as static-only (functionsMode: 'static_only'). ` +
+          `Files in '/functions/' will be served as static assets without edge function execution.`,
+        );
+      }
+    } else {
+      // optional_fallback: warn if uncompiled functions exist without _worker.js, but allow static fallback
+      if (hasRawFunctions && !hasCompiledWorker) {
+        this.logger.warn(
+          `[CloudflarePagesProvider] Warning: Project contains uncompiled Pages Functions in '/functions/' without a compiled '_worker.js' bundle. ` +
+          `Cloudflare Pages Direct Upload serves raw '/functions/' as static files. Edge functions must be compiled into '_worker.js' prior to upload.`,
+        );
+      }
+    }
+
     const manifestDigest = crypto
       .createHash('sha256')
       .update(JSON.stringify(manifest))
@@ -160,6 +201,9 @@ export class CloudflarePagesProvider extends BaseDeploymentProvider {
           totalSizeBytes,
           outputDirectory: config.outputDirectory,
           buildCommand: config.buildCommand,
+          functionsMode,
+          hasCompiledWorker,
+          hasUncompiledFunctions: hasRawFunctions && !hasCompiledWorker,
         },
       },
       providerMetadata: {
@@ -169,6 +213,9 @@ export class CloudflarePagesProvider extends BaseDeploymentProvider {
         filesMap,
         branch: config.branch,
         customDomains: config.customDomains,
+        functionsMode,
+        hasCompiledWorker,
+        hasUncompiledFunctions: hasRawFunctions && !hasCompiledWorker,
       },
     };
   }
@@ -293,6 +340,35 @@ export class CloudflarePagesProvider extends BaseDeploymentProvider {
 
     if (!apiToken || !accountId || !projectName) {
       throw new Error('Rollback requires apiToken, accountId, and projectName');
+    }
+
+    // Reject preview deployment rollbacks
+    const explicitEnv = credentials['environment'] as string | undefined;
+    if (explicitEnv === 'preview') {
+      throw new InvalidRollbackEnvironmentException(
+        'Cloudflare Pages rollback is only supported for production deployments. Preview deployments cannot be rolled back.',
+        { deploymentId, targetVersionIdentifier, environment: 'preview' },
+      );
+    }
+
+    try {
+      const dep = await this.apiClient.getPagesDeployment(
+        accountId,
+        projectName,
+        targetVersionIdentifier,
+        apiToken,
+      );
+      if (dep && dep.environment === 'preview') {
+        throw new InvalidRollbackEnvironmentException(
+          'Cloudflare Pages rollback is only supported for production deployments. Preview deployments cannot be rolled back.',
+          { deploymentId, targetVersionIdentifier, environment: dep.environment },
+        );
+      }
+    } catch (err) {
+      if (err instanceof DomainException) {
+        throw err;
+      }
+      // If retrieval fails with non-domain error, proceed to allow rollback attempt
     }
 
     this.logger.warn(

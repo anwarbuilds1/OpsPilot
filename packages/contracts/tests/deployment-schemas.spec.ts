@@ -63,6 +63,41 @@ describe('Contracts & Schema Validation', () => {
     expect(parsed.targetProvider).toBe('cloudflare_workers');
   });
 
+  it('validates a valid Cloudflare Pages deployment config DTO and defaults functionsMode', () => {
+    const validPages = {
+      deploymentId: 'c0000000-0000-4000-8000-000000000001',
+      organizationId: 'c0000000-0000-4000-8000-000000000002',
+      projectId: 'c0000000-0000-4000-8000-000000000003',
+      serviceId: 'c0000000-0000-4000-8000-000000000004',
+      deploymentTargetId: 'c0000000-0000-4000-8000-000000000005',
+      targetProvider: 'cloudflare_pages',
+      buildStrategy: 'static_export',
+      artifactType: 'pages_manifest',
+      applicationRuntime: 'static_cdn',
+      environment: 'production',
+      commitSha: 'c'.repeat(40),
+      branch: 'main',
+      healthcheckPath: '/health',
+      projectName: 'marketing-site',
+      buildCommand: 'npm run build',
+      outputDirectory: 'dist',
+    };
+
+    const parsed = DeploymentConfigSchema.parse(validPages);
+    expect(parsed.targetProvider).toBe('cloudflare_pages');
+    if (parsed.targetProvider === 'cloudflare_pages') {
+      expect(parsed.functionsMode).toBe('optional_fallback');
+    }
+
+    const parsedWithRequired = DeploymentConfigSchema.parse({
+      ...validPages,
+      functionsMode: 'required',
+    });
+    if (parsedWithRequired.targetProvider === 'cloudflare_pages') {
+      expect(parsedWithRequired.functionsMode).toBe('required');
+    }
+  });
+
   it('rejects invalid commit SHA or non-UUID deployment ID', () => {
     const invalidSha = {
       deploymentId: 'not-a-uuid',

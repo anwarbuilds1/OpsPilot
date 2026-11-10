@@ -216,13 +216,7 @@ export class CloudflareWorkersProvider extends BaseDeploymentProvider {
 
     this.logger.info(`Deploying Cloudflare Worker script '${scriptName}' to account ${accountId}`);
 
-    // 1. Sync secrets securely if provided
-    if (secrets && Object.keys(secrets).length > 0) {
-      this.logger.info(`Synchronizing ${Object.keys(secrets).length} secrets to Cloudflare script '${scriptName}'`);
-      await this.apiClient.syncScriptSecrets(accountId, scriptName, secrets, apiToken);
-    }
-
-    // 2. Upload immutable Worker version
+    // 1. Upload immutable Worker version first to validate compilation and bundle syntax
     const versionRes = await this.apiClient.uploadScriptVersion(
       accountId,
       scriptName,
@@ -236,6 +230,12 @@ export class CloudflareWorkersProvider extends BaseDeploymentProvider {
     );
 
     this.logger.info(`Created Worker version ${versionRes.number} (ID: ${versionRes.id})`);
+
+    // 2. Synchronize secrets securely once version compilation has succeeded
+    if (secrets && Object.keys(secrets).length > 0) {
+      this.logger.info(`Synchronizing ${Object.keys(secrets).length} secrets to Cloudflare script '${scriptName}'`);
+      await this.apiClient.syncScriptSecrets(accountId, scriptName, secrets, apiToken);
+    }
 
     // 3. Activate version deployment with 100% traffic
     const deployRes = await this.apiClient.deployScriptVersion(
@@ -328,6 +328,17 @@ export class CloudflareWorkersProvider extends BaseDeploymentProvider {
     this.logger.warn(
       `Executing instant rollback for Worker '${scriptName}' to version ${targetVersionIdentifier}`,
     );
+
+    // Synchronize rollback secrets if explicitly provided
+    const rollbackSecrets = (credentials['secrets'] ?? credentials['rollbackSecrets']) as Record<string, string> | undefined;
+    if (rollbackSecrets && Object.keys(rollbackSecrets).length > 0) {
+      this.logger.info(`Synchronizing ${Object.keys(rollbackSecrets).length} secrets for rollback on Worker '${scriptName}'`);
+      await this.apiClient.syncScriptSecrets(accountId, scriptName, rollbackSecrets, apiToken);
+    } else {
+      this.logger.info(
+        `Note: Cloudflare Workers secrets are script-global. Rolling back traffic to version ${targetVersionIdentifier} does not alter existing secrets.`,
+      );
+    }
 
     // Direct 100% traffic shift to target version
     await this.apiClient.deployScriptVersion(

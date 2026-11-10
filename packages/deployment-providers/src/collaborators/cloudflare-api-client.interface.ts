@@ -139,6 +139,22 @@ export interface ICloudflareApiClient {
   ): Promise<{ id: string; url: string; expiresAt: Date }>;
 
   // Pages Lifecycle Operations
+  createPagesDirectUploadSession(
+    accountId: string,
+    projectName: string,
+    apiToken: string,
+  ): Promise<{ jwt: string; uploadUrl?: string }>;
+
+  checkMissingPagesAssets(
+    hashes: readonly string[],
+    sessionJwt: string,
+  ): Promise<string[]>;
+
+  uploadPagesMissingAssets(
+    missingFiles: ReadonlyArray<{ hash: string; content: Buffer }>,
+    sessionJwt: string,
+  ): Promise<void>;
+
   getOrCreatePagesProject(
     accountId: string,
     projectName: string,

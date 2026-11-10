@@ -84,6 +84,7 @@ export interface CloudflarePagesDeploymentConfig extends BaseDeploymentConfig {
   readonly customDomains?: readonly string[];
   readonly environmentVariables: Readonly<Record<string, string>>;
   readonly secrets: Readonly<Record<string, string>>;
+  readonly functionsMode?: 'required' | 'static_only' | 'optional_fallback';
 }
 
 export type DeploymentConfig =

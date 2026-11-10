@@ -48,6 +48,9 @@ describe('CloudflareWorkersProvider', () => {
       expiresAt: new Date(Date.now() + 3600_000),
     }),
     getOrCreatePagesProject: vi.fn(),
+    createPagesDirectUploadSession: vi.fn(),
+    checkMissingPagesAssets: vi.fn(),
+    uploadPagesMissingAssets: vi.fn(),
     createPagesDirectUploadDeployment: vi.fn(),
     getPagesDeployment: vi.fn(),
     rollbackPagesDeployment: vi.fn(),
@@ -212,5 +215,60 @@ describe('CloudflareWorkersProvider', () => {
     const unhealthy = await provider.checkHealth('https://unhealthy-payment-processor.workers.dev/health');
     expect(unhealthy.isHealthy).toBe(false);
     expect(unhealthy.httpStatusCode).toBe(500);
+  });
+
+  it('uploads script version before synchronizing secrets to prevent production mutation on failure', async () => {
+    const provider = new CloudflareWorkersProvider(mockApiClient);
+    const prepared = await provider.prepareDeployment(validConfig);
+
+    vi.clearAllMocks();
+    (mockApiClient.uploadScriptVersion as any).mockRejectedValueOnce(
+      new Error('Worker compilation error: syntax error on line 42'),
+    );
+
+    await expect(
+      provider.deploy(prepared, {
+        apiToken: dummyToken,
+        accountId: dummyAccountId,
+      }),
+    ).rejects.toThrow(/Worker compilation error/);
+
+    expect(mockApiClient.uploadScriptVersion).toHaveBeenCalled();
+    // CRITICAL: secrets must NOT have been synchronized since version upload failed
+    expect(mockApiClient.syncScriptSecrets).not.toHaveBeenCalled();
+  });
+
+  it('synchronizes rollback secrets when provided during rollback', async () => {
+    const provider = new CloudflareWorkersProvider(mockApiClient);
+    vi.clearAllMocks();
+
+    const rollbackSecrets = {
+      DATABASE_PASSWORD: 'restored-previous-password-999',
+    };
+
+    const rollbackRes = await provider.rollback(
+      validConfig.deploymentId,
+      'previous-version-uuid-99',
+      {
+        apiToken: dummyToken,
+        accountId: dummyAccountId,
+        scriptName: 'payment-processor',
+        secrets: rollbackSecrets,
+      },
+    );
+
+    expect(mockApiClient.syncScriptSecrets).toHaveBeenCalledWith(
+      dummyAccountId,
+      'payment-processor',
+      rollbackSecrets,
+      dummyToken,
+    );
+    expect(mockApiClient.deployScriptVersion).toHaveBeenCalledWith(
+      dummyAccountId,
+      'payment-processor',
+      [{ versionId: 'previous-version-uuid-99', percentage: 100 }],
+      dummyToken,
+    );
+    expect(rollbackRes.success).toBe(true);
   });
 });

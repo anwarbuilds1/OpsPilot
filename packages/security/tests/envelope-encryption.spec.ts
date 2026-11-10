@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EnvelopeEncryptionService } from '../src/encryption/envelope-encryption.service.js';
+import { EnvelopeEncryptionService, EncryptedDataRecord } from '../src/encryption/envelope-encryption.service.js';
 
 describe('EnvelopeEncryptionService', () => {
   const service = new EnvelopeEncryptionService();
@@ -7,19 +7,44 @@ describe('EnvelopeEncryptionService', () => {
   const org2 = 'a0000000-0000-4000-8000-000000000002';
   const secretData = 'cf_api_token_very_secret_998877665544332211';
 
-  it('successfully encrypts and decrypts a secret for a valid tenant', () => {
+  it('successfully encrypts as modern v2 with AAD and decrypts for authorized tenant', () => {
     const record = service.encrypt(secretData, org1);
 
     expect(record.encryptedPayload).toBeDefined();
     expect(record.authTag.length).toBe(32); // 16 bytes hex = 32 chars
     expect(record.initializationVector.length).toBe(24); // 12 bytes hex = 24 chars
-    expect(record.keyVersion).toBe(1);
+    expect(record.keyVersion).toBe(2);
 
     const decrypted = service.decrypt(record, org1);
     expect(decrypted).toBe(secretData);
   });
 
-  it('fails decryption when accessed by a different organization (Tenant Isolation)', () => {
+  it('decrypts legacy v1 ciphertext without AAD (Backward Compatibility)', () => {
+    const legacyFixture: EncryptedDataRecord = {
+      encryptedPayload: 'dOTp0IkWo0HYsVsw1LDythPFZr3/wKOS97t02xs=',
+      authTag: 'd13c735aeeefcf084a14e7c744121b8c',
+      initializationVector: '123456789012345678901234',
+      keyVersion: 1,
+    };
+
+    const decrypted = service.decrypt(legacyFixture, org1);
+    expect(decrypted).toBe('legacy-v1-secret-token-abcdef');
+  });
+
+  it('fails decryption of legacy v1 ciphertext when accessed by different tenant', () => {
+    const legacyFixture: EncryptedDataRecord = {
+      encryptedPayload: 'dOTp0IkWo0HYsVsw1LDythPFZr3/wKOS97t02xs=',
+      authTag: 'd13c735aeeefcf084a14e7c744121b8c',
+      initializationVector: '123456789012345678901234',
+      keyVersion: 1,
+    };
+
+    expect(() => {
+      service.decrypt(legacyFixture, org2);
+    }).toThrow(/Envelope decryption failed: cryptographic authentication tag mismatch or wrong organization context/);
+  });
+
+  it('fails v2 decryption when accessed by a different organization (Tenant Isolation)', () => {
     const record = service.encrypt(secretData, org1);
 
     expect(() => {
@@ -27,7 +52,7 @@ describe('EnvelopeEncryptionService', () => {
     }).toThrow(/Envelope decryption failed: cryptographic authentication tag mismatch or wrong organization context/);
   });
 
-  it('fails decryption when the payload or auth tag is tampered with', () => {
+  it('fails decryption when v2 payload or auth tag is tampered with', () => {
     const record = service.encrypt(secretData, org1);
 
     const tamperedPayloadRecord = {
@@ -49,13 +74,45 @@ describe('EnvelopeEncryptionService', () => {
     }).toThrow(/Envelope decryption failed/);
   });
 
-  it('supports key/secret rotation yielding a newly decryptable record', () => {
-    const record = service.encrypt(secretData, org1);
-    const rotated = service.rotate(record, org1);
+  it('never falls back from failed v2 authentication to legacy v1 decryption', () => {
+    const v2Record = service.encrypt(secretData, org1);
+    const corruptedV2Record: EncryptedDataRecord = {
+      ...v2Record,
+      authTag: 'ff'.repeat(16), // Corrupted tag
+    };
 
-    expect(rotated.initializationVector).not.toBe(record.initializationVector);
+    expect(() => service.decrypt(corruptedV2Record, org1)).toThrow(
+      /Envelope decryption failed: cryptographic authentication tag mismatch/
+    );
+  });
+
+  it('rejects unknown or unsupported key versions', () => {
+    const unknownVersionRecord: EncryptedDataRecord = {
+      encryptedPayload: Buffer.from('test').toString('base64'),
+      authTag: '00'.repeat(16),
+      initializationVector: '12'.repeat(12),
+      keyVersion: 99,
+    };
+
+    expect(() => service.decrypt(unknownVersionRecord, org1)).toThrow(
+      /Unsupported encryption key version: 99/
+    );
+  });
+
+  it('rotates legacy v1 records to modern v2 records with AAD', () => {
+    const legacyFixture: EncryptedDataRecord = {
+      encryptedPayload: 'dOTp0IkWo0HYsVsw1LDythPFZr3/wKOS97t02xs=',
+      authTag: 'd13c735aeeefcf084a14e7c744121b8c',
+      initializationVector: '123456789012345678901234',
+      keyVersion: 1,
+    };
+
+    const rotated = service.rotate(legacyFixture, org1);
+    expect(rotated.keyVersion).toBe(2);
+    expect(rotated.initializationVector).not.toBe(legacyFixture.initializationVector);
+
     const decrypted = service.decrypt(rotated, org1);
-    expect(decrypted).toBe(secretData);
+    expect(decrypted).toBe('legacy-v1-secret-token-abcdef');
   });
 
   it('validates master key length in constructor', () => {
@@ -88,7 +145,7 @@ describe('EnvelopeEncryptionService', () => {
   it('rejects empty plaintext or missing organizationId', () => {
     expect(() => service.encrypt('', org1)).toThrow(/Plaintext cannot be empty/);
     expect(() => service.encrypt(secretData, '')).toThrow(/organizationId is required/);
-    expect(() => service.decrypt({ encryptedPayload: '', authTag: '', initializationVector: '', keyVersion: 1 }, org1)).toThrow(/Invalid encrypted data record/);
-    expect(() => service.decrypt({ encryptedPayload: 'xyz', authTag: '00', initializationVector: '00', keyVersion: 1 }, '')).toThrow(/organizationId is required/);
+    expect(() => service.decrypt({ encryptedPayload: '', authTag: '', initializationVector: '', keyVersion: 2 }, org1)).toThrow(/Invalid encrypted data record/);
+    expect(() => service.decrypt({ encryptedPayload: 'xyz', authTag: '00', initializationVector: '00', keyVersion: 2 }, '')).toThrow(/organizationId is required/);
   });
 });

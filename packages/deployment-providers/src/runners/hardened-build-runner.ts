@@ -29,14 +29,18 @@ export interface BuildRunnerTask {
   readonly organizationId: string;
   readonly repoUrl: string;
   readonly commitSha: string;
-  readonly buildCommand: string;
+  readonly buildCommand?: string;
+  readonly commandArgs?: readonly string[];
+  readonly networkMode?: 'none' | 'isolated-bridge';
   readonly environmentVariables?: Record<string, string>;
   readonly volumeMounts?: readonly { hostPath: string; containerPath: string; readOnly?: boolean }[];
 }
 
 export interface ContainerExecutionSpec {
   readonly image: string;
+  readonly containerName: string;
   readonly commandArgs: readonly string[];
+  readonly argv: readonly string[];
   readonly environmentVariables: Readonly<Record<string, string>>;
   readonly timeoutMs: number;
 }
@@ -126,15 +130,26 @@ export class HardenedBuildRunner {
     // 8. Ephemeral container cleanup
     dockerArgs.push('--rm');
 
-    // 9. Sanitized environment variables
+    // 9. Deterministic container naming
+    const containerName = `opspilot-build-${task.buildId}`;
+    dockerArgs.push(`--name=${containerName}`);
+
+    // 10. Guaranteed network isolation (default to --network=none)
+    const networkMode = task.networkMode ?? 'none';
+    dockerArgs.push(`--network=${networkMode}`);
+
+    // 11. Sanitized environment variables
     const sanitizedEnv: Record<string, string> = {
       OPSPILOT_BUILD_ID: task.buildId,
       OPSPILOT_ORG_ID: task.organizationId,
       OPSPILOT_COMMIT_SHA: task.commitSha,
-      OPSPILOT_BUILD_COMMAND: task.buildCommand,
       NODE_ENV: 'production',
       CI: 'true',
     };
+
+    if (task.buildCommand) {
+      sanitizedEnv['OPSPILOT_BUILD_COMMAND'] = task.buildCommand;
+    }
 
     if (task.environmentVariables) {
       for (const [key, val] of Object.entries(task.environmentVariables)) {
@@ -146,7 +161,7 @@ export class HardenedBuildRunner {
       dockerArgs.push('-e', `${key}=${val}`);
     }
 
-    // 10. Volume mounts (guaranteed no docker socket or rootfs mounting)
+    // 12. Volume mounts (guaranteed no docker socket or rootfs mounting)
     if (task.volumeMounts) {
       for (const mount of task.volumeMounts) {
         const roFlag = mount.readOnly ? ':ro' : '';
@@ -154,12 +169,32 @@ export class HardenedBuildRunner {
       }
     }
 
+    // 13. Determine direct argv arguments for container execution
+    let argv: readonly string[] = [];
+    if (task.commandArgs && task.commandArgs.length > 0) {
+      argv = [...task.commandArgs];
+    } else if (task.buildCommand && task.buildCommand.trim().length > 0) {
+      argv = task.buildCommand.trim().split(/\s+/).filter(Boolean);
+    }
+
     return {
       image: runnerImage,
+      containerName,
       commandArgs: dockerArgs,
+      argv,
       environmentVariables: sanitizedEnv,
       timeoutMs: limits.timeoutSeconds * 1000,
     };
+  }
+
+  /**
+   * Generates a deterministic container cleanup command to terminate and remove orphaned containers.
+   */
+  generateCleanupCommand(buildId: string): string {
+    if (!buildId || !/^[a-zA-Z0-9_-]+$/.test(buildId)) {
+      throw new SecurityViolationException('Invalid buildId for container cleanup', { buildId });
+    }
+    return `docker rm -f opspilot-build-${buildId}`;
   }
 
   /**
@@ -174,9 +209,63 @@ export class HardenedBuildRunner {
   }
 
   /**
-   * Audits build task to reject credential ingestion, docker socket exposure, or path escapes.
+   * Audits build task to reject credential ingestion, docker socket exposure, host networking, or path escapes.
    */
   private auditTaskSecurity(task: BuildRunnerTask): void {
+    if (!task.buildId || !/^[a-zA-Z0-9_-]+$/.test(task.buildId)) {
+      throw new SecurityViolationException(
+        `Invalid buildId '${task.buildId}'. Must be alphanumeric with dashes or underscores.`,
+        { buildId: task.buildId }
+      );
+    }
+
+    // Reject host networking
+    const networkMode = (task as { networkMode?: string }).networkMode;
+    if (networkMode === 'host') {
+      throw new SecurityViolationException(
+        'CRITICAL SECURITY VIOLATION: Host networking (--network=host) is strictly forbidden for build runners.',
+        { networkMode }
+      );
+    }
+    if (networkMode && networkMode !== 'none' && networkMode !== 'isolated-bridge') {
+      throw new SecurityViolationException(
+        `Invalid network mode '${networkMode}'. Only 'none' or 'isolated-bridge' are permitted.`,
+        { networkMode }
+      );
+    }
+
+    // Validate argv arguments and prevent shell wrapper injection
+    if (task.commandArgs) {
+      for (const arg of task.commandArgs) {
+        if (typeof arg !== 'string') {
+          throw new SecurityViolationException('commandArgs must contain only strings');
+        }
+        if (arg.includes('\0')) {
+          throw new SecurityViolationException('commandArgs cannot contain null bytes');
+        }
+      }
+      if (task.commandArgs.length > 0) {
+        const first = task.commandArgs[0]?.trim();
+        if ((first === 'sh' || first === 'bash' || first === '/bin/sh' || first === '/bin/bash') && task.commandArgs.includes('-c')) {
+          throw new SecurityViolationException(
+            'CRITICAL SECURITY VIOLATION: Wrapping build commands in shell execution (sh -c / bash -c) is strictly forbidden.',
+            { commandArgs: task.commandArgs }
+          );
+        }
+      }
+    }
+
+    // If legacy buildCommand string is provided without commandArgs, reject shell metacharacters
+    if (task.buildCommand && (!task.commandArgs || task.commandArgs.length === 0)) {
+      const dangerousShellChars = /[;&|`$()<>\n]/;
+      if (dangerousShellChars.test(task.buildCommand)) {
+        throw new SecurityViolationException(
+          `Unsafe shell metacharacters detected in buildCommand: '${task.buildCommand}'. Pass validated commandArgs argv array instead.`,
+          { buildCommand: task.buildCommand }
+        );
+      }
+    }
+
     // Check environment variables for leaked credentials
     if (task.environmentVariables) {
       for (const key of Object.keys(task.environmentVariables)) {
@@ -205,9 +294,9 @@ export class HardenedBuildRunner {
           );
         }
 
-        const sensitiveDirs = ['/etc', '/proc', '/sys', '/root', '/bin', '/usr', '/var/run'];
+        const sensitiveDirs = ['/', '/etc', '/proc', '/sys', '/root', '/bin', '/usr', '/var', '/var/run', '/dev', '/boot', '/lib', '/lib64'];
         for (const sensitive of sensitiveDirs) {
-          if (mount.hostPath === sensitive || mount.hostPath.startsWith(`${sensitive}/`)) {
+          if (mount.hostPath === sensitive || (mount.hostPath.startsWith(`${sensitive}/`) && !mount.hostPath.startsWith('/tmp'))) {
             throw new SecurityViolationException(
               `Mounting host root/system directory '${mount.hostPath}' into build runner is forbidden.`,
               { mount }

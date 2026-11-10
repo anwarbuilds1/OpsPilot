@@ -16,7 +16,7 @@ export interface IEnvelopeEncryptionService {
 export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
   private readonly algorithm = 'aes-256-gcm';
   private readonly masterKey: Buffer;
-  private readonly currentKeyVersion = 1;
+  readonly currentKeyVersion = 2;
 
   constructor(masterKeyHex?: string) {
     if (masterKeyHex) {
@@ -45,6 +45,9 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
     return Buffer.from(crypto.hkdfSync('sha256', this.masterKey, organizationId, info, 32));
   }
 
+  /**
+   * Encrypts plaintext using modern version 2 format with organizationId bound as AAD.
+   */
   encrypt(plaintext: string, organizationId: string): EncryptedDataRecord {
     if (!plaintext) {
       throw new Error('Plaintext cannot be empty');
@@ -70,6 +73,12 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
     };
   }
 
+  /**
+   * Decrypts ciphertext with strict key_version handling.
+   * - Key Version 1: Legacy encryption without AAD.
+   * - Key Version 2: Modern encryption with organizationId authenticated additional data.
+   * - Never silently falls back between versions on authentication failure.
+   */
   decrypt(record: EncryptedDataRecord, organizationId: string): string {
     if (!record || !record.encryptedPayload) {
       throw new Error('Invalid encrypted data record');
@@ -80,21 +89,44 @@ export class EnvelopeEncryptionService implements IEnvelopeEncryptionService {
 
     const iv = Buffer.from(record.initializationVector, 'hex');
     const authTag = Buffer.from(record.authTag, 'hex');
-    const dek = this.deriveTenantKey(organizationId, record.keyVersion);
 
-    const decipher = crypto.createDecipheriv(this.algorithm, dek, iv);
-    decipher.setAAD(Buffer.from(organizationId, 'utf-8'));
-    decipher.setAuthTag(authTag);
+    if (record.keyVersion === 1) {
+      // Legacy v1: decrypt without AAD using v1 derived key
+      const dek = this.deriveTenantKey(organizationId, 1);
+      const decipher = crypto.createDecipheriv(this.algorithm, dek, iv);
+      decipher.setAuthTag(authTag);
 
-    try {
-      let decrypted = decipher.update(record.encryptedPayload, 'base64', 'utf-8');
-      decrypted += decipher.final('utf-8');
-      return decrypted;
-    } catch (err) {
-      throw new Error(`Envelope decryption failed: cryptographic authentication tag mismatch or wrong organization context`);
+      try {
+        let decrypted = decipher.update(record.encryptedPayload, 'base64', 'utf-8');
+        decrypted += decipher.final('utf-8');
+        return decrypted;
+      } catch {
+        throw new Error('Envelope decryption failed: cryptographic authentication tag mismatch or wrong organization context');
+      }
     }
+
+    if (record.keyVersion === 2) {
+      // Modern v2: decrypt with organizationId as AAD using v2 derived key
+      const dek = this.deriveTenantKey(organizationId, 2);
+      const decipher = crypto.createDecipheriv(this.algorithm, dek, iv);
+      decipher.setAAD(Buffer.from(organizationId, 'utf-8'));
+      decipher.setAuthTag(authTag);
+
+      try {
+        let decrypted = decipher.update(record.encryptedPayload, 'base64', 'utf-8');
+        decrypted += decipher.final('utf-8');
+        return decrypted;
+      } catch {
+        throw new Error('Envelope decryption failed: cryptographic authentication tag mismatch or wrong organization context');
+      }
+    }
+
+    throw new Error(`Unsupported encryption key version: ${record.keyVersion}`);
   }
 
+  /**
+   * Rotates credentials by decrypting the existing record and re-encrypting with modern v2 format.
+   */
   rotate(record: EncryptedDataRecord, organizationId: string): EncryptedDataRecord {
     const plaintext = this.decrypt(record, organizationId);
     return this.encrypt(plaintext, organizationId);

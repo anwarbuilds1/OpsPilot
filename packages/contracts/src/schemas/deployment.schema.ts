@@ -132,6 +132,7 @@ export const CloudflarePagesConfigSchema = z.object({
   customDomains: z.array(z.string()).optional(),
   environmentVariables: z.record(z.string(), z.string()).default({}),
   secrets: z.record(z.string(), z.string()).default({}),
+  functionsMode: z.enum(['required', 'static_only', 'optional_fallback']).default('optional_fallback'),
 });
 
 export const DeploymentConfigSchema = z.discriminatedUnion('targetProvider', [
