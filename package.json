@@ -19,7 +19,7 @@
     "test:security": "vitest run packages/deployment-providers/tests/hardened-build-runner.spec.ts packages/security/tests/secret-redactor.spec.ts"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.13",
+    "@babel/core": "^8.1.0",
     "@babel/eslint-parser": "^7.29.13",
     "@babel/preset-typescript": "^7.29.7",
     "@types/node": "^26.6.6",
